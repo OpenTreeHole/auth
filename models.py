@@ -1,8 +1,10 @@
 import re
 
+from sanic import Sanic
+from tortoise import fields, Tortoise
 from tortoise.models import Model
-from tortoise import fields, Tortoise, run_async
-from server import app
+
+app = Sanic.get_app()
 
 
 class User(Model):
@@ -52,10 +54,11 @@ TORTOISE_ORM.update({'connections': {
 }})
 
 
-async def init():
+@app.signal('server.init.after')
+async def init(*args, **kwargs):
     await Tortoise.init(TORTOISE_ORM)
-    await Tortoise.generate_schemas()
 
 
-if __name__ == '__main__':
-    run_async(init())
+@app.signal('server.shutdown.before')
+async def close(*args, **kwargs):
+    await Tortoise.close_connections()

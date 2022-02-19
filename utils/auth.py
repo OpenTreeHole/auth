@@ -5,8 +5,9 @@ import time
 
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
+from sanic import Sanic
 
-from server import app
+app = Sanic.get_app()
 
 
 def get_key(key_file):

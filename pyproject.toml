@@ -7,12 +7,13 @@ license = "Apache"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-sanic = {extras = ["ext"], version = "^21.12.1"}
+sanic = { extras = ["ext"], version = "^21.12.1" }
 tortoise-orm = "^0.18.1"
 aiomysql = "^0.0.22"
 aiosqlite = "^0.17.0"
 pycryptodome = "^3.14.1"
 aerich = "^0.6.2"
+pydantic = "^1.9.0"
 
 [tool.poetry.dev-dependencies]
 
