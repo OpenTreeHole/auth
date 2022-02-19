@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import secrets
 import time
 
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
@@ -32,6 +33,28 @@ def many_hashes(string: str) -> str:
     iterations = 10 ** 6
     byte_string = bytes(string.encode('utf-8'))
     return hashlib.pbkdf2_hmac('sha3_512', byte_string, b'', iterations).hex()
+
+
+def password_hash(algorithm: str, raw_password: str, salt: str, iterations: int) -> str:
+    return base64.b64encode(
+        hashlib.pbkdf2_hmac(algorithm, raw_password.encode(), salt.encode(), iterations)
+    ).decode()
+
+
+def make_password(raw_password: str) -> str:
+    chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    algorithm = 'sha256'
+    iterations = 216000
+    salt: str = ''.join(secrets.choice(chars) for i in range(12))
+    hash_b64: str = password_hash(algorithm, raw_password, salt, iterations)
+    return f'pbkdf2_{algorithm}${iterations}${salt}${hash_b64}'
+
+
+def check_password(raw_password: str, encrypted_password: str) -> bool:
+    algorithm, iterations, salt, hash_b64 = encrypted_password.split('$')
+    algorithm = algorithm.split('_')[-1]
+    iterations = int(iterations)
+    return password_hash(algorithm, raw_password, salt, iterations) == hash_b64
 
 
 if __name__ == '__main__':
