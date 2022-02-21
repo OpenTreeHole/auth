@@ -1,19 +1,17 @@
 import multiprocessing
 
-from sanic import Sanic, json
-
-app = Sanic('auth')
+from sanic import json
 from sanic.exceptions import Unauthorized
-from sanic.log import logger
 from sanic_ext import validate
+
+from settings import get_sanic_app
+
+app = get_sanic_app()
 
 from models import User
 from serializers import LoginSerializer
 from utils.auth import many_hashes, check_password
 from utils.db import get_object_or_404
-
-if app.config.get('DEBUG', True):
-    logger.warning('\nserver is running in dev mode, do not use in production\n')
 
 
 @app.get('/')
@@ -40,6 +38,6 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=8000,
         workers=app.config.get('WORKERS', multiprocessing.cpu_count()),
-        debug=app.config.get('DEBUG', True),
-        access_log=app.config.get('ACCESS_LOG', True)
+        debug=app.config['DEBUG'],
+        access_log=app.config['DEBUG']
     )
