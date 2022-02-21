@@ -4,6 +4,8 @@ from sanic import Sanic
 from tortoise import fields, Tortoise
 from tortoise.models import Model
 
+from utils.auth import encrypt_email, many_hashes, make_password
+
 app = Sanic.get_app()
 
 
@@ -18,6 +20,15 @@ class User(Model):
     def __str__(self):
         return f'User#{self.id}'
 
+    @classmethod
+    async def create_user(cls, email: str, password: str, **kwargs) -> 'User':
+        return await cls.create(
+            email=encrypt_email(email),
+            identifier=many_hashes(email),
+            password=make_password(password),
+            **kwargs
+        )
+
 
 TORTOISE_ORM = {
     'apps': {
@@ -29,12 +40,6 @@ TORTOISE_ORM = {
     'timezone': app.config.get('TZ', 'UTC')
 }
 # aerich 暂不支持 sqlite
-# if app.config.get('DEBUG', True):
-#     TORTOISE_ORM.update({'connections': {'default': 'sqlite://db.sqlite3'}})
-# else:
-#     TORTOISE_ORM.update({'connections': {
-#         'default': app.config.get('DB_URL', 'mysql://username:password@mysql:3306/auth')
-#     }})
 db_url = app.config.get('DB_URL', 'mysql://username:password@mysql:3306/auth')
 match = re.match(r'(.+)://(.+):(.+)@(.+):(.+)/(.+)', db_url)
 TORTOISE_ORM.update({'connections': {
@@ -48,9 +53,6 @@ TORTOISE_ORM.update({'connections': {
             'database': match.group(6),
         }
     },
-}})
-TORTOISE_ORM.update({'connections': {
-    'default': app.config.get('DB_URL', 'mysql://treehole:treehole@172.30.2.3:3306/treehole_auth')
 }})
 
 
