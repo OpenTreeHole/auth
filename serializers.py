@@ -2,7 +2,9 @@ import re
 
 from pydantic import BaseModel, validator
 from sanic import Sanic
+from tortoise.contrib.pydantic import pydantic_model_creator
 
+from models import User
 from utils.exceptions import ValidationError
 
 app = Sanic.get_app()
@@ -25,7 +27,9 @@ class LoginSerializer(BaseModel):
 
     @validator('password')
     def password_too_weak(cls, password):
-        print(password)
         if len(password) < 8:
             raise ValidationError('password too weak')
         return password
+
+
+UserSerializer = pydantic_model_creator(User)

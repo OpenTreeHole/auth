@@ -9,7 +9,7 @@ from settings import get_sanic_app
 app = get_sanic_app()
 
 from models import User
-from serializers import LoginSerializer
+from serializers import LoginSerializer, UserSerializer
 from utils.auth import many_hashes, check_password
 from utils.db import get_object_or_404
 
@@ -25,7 +25,9 @@ async def login(request, body: LoginSerializer):
     user = await get_object_or_404(User, identifier=many_hashes(body.email))
     if not check_password(body.password, user.password):
         raise Unauthorized('password incorrect')
-    return json({'login': True})
+    user = await UserSerializer.from_tortoise_orm(user)
+
+    return json(user.json(), dumps=lambda x: x)
 
 
 @app.post('/register')
