@@ -1,15 +1,23 @@
+import json
 import re
+from json import JSONDecodeError
 
 from sanic import Sanic
 from sanic.log import logger
 from tortoise import Tortoise
 
+
+def parse_array(s: str) -> list:
+    try:
+        return json.loads(s)
+    except JSONDecodeError:
+        return []
+
+
 app = Sanic('auth')
 app.config['MODE'] = MODE = app.config.get('MODE', 'dev')
 app.config['DEBUG'] = (app.config['MODE'] != 'production')
-
-if MODE != 'production':
-    logger.warning(f'\nserver is running in {MODE} mode, do not use in production\n')
+app.config['EMAIL_WHITELIST'] = parse_array(app.config.get('EMAIL_WHITELIST', ''))
 
 TORTOISE_ORM = {
     'apps': {
@@ -36,6 +44,11 @@ TORTOISE_ORM.update({'connections': {
     },
 }})
 
+if MODE != 'production':
+    logger.warning(f'server is running in {MODE} mode, do not use in production')
+if not app.config['EMAIL_WHITELIST']:
+    logger.warning(f'email whitelist not set')
+
 
 @app.signal('server.init.after')
 async def init(*args, **kwargs):
@@ -49,5 +62,5 @@ async def close(*args, **kwargs):
         await Tortoise.close_connections()
 
 
-def get_sanic_app():
+def get_sanic_app() -> Sanic:
     return app

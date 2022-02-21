@@ -19,12 +19,13 @@ class LoginSerializer(BaseModel):
             raise ValidationError('invalid email format')
         domain = match.group(1)
         whitelist = app.config.get('EMAIL_WHITELIST', [])
-        if whitelist and domain not in whitelist:  # 未设置 whitelist 时不检查
+        if len(whitelist) > 0 and domain not in whitelist:  # 未设置 whitelist 时不检查
             raise ValidationError('email not in whitelist')
         return email
 
     @validator('password')
     def password_too_weak(cls, password):
+        print(password)
         if len(password) < 8:
             raise ValidationError('password too weak')
         return password
