@@ -16,6 +16,8 @@ aerich = "^0.6.2"
 pydantic = "^1.9.0"
 
 [tool.poetry.dev-dependencies]
+sanic-testing = "^0.8.2"
+pytest-asyncio = "^0.18.1"
 
 
 [tool.aerich]
