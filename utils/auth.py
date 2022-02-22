@@ -1,33 +1,19 @@
 import base64
 import hashlib
 import secrets
-import time
+from datetime import datetime, timezone, timedelta
+from typing import Tuple, Union
 
-from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
-from Crypto.PublicKey import RSA
+import jwt
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from jwt import InvalidSignatureError, ExpiredSignatureError
 from sanic import Sanic
 
+from settings import get_sanic_app
+from utils.test import timer
+
 app = Sanic.get_app()
-
-
-def get_key(key_file):
-    with open(key_file) as f:
-        data = f.read()
-    return PKCS1_cipher.new(RSA.importKey(data))
-
-
-PUBLIC_KEY = get_key(app.config.get('EMAIL_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
-PRIVATE_KEY = get_key(app.config.get('EMAIL_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
-
-
-def encrypt_email(plaintext: str) -> str:
-    encrypted_bytes = PUBLIC_KEY.encrypt(bytes(plaintext.encode('utf-8')))
-    return base64.b64encode(encrypted_bytes).decode('utf-8')
-
-
-def decrypt_email(encrypted: str) -> str:
-    back_text = PRIVATE_KEY.decrypt(base64.b64decode(encrypted), 0)
-    return back_text.decode('utf-8')
 
 
 def many_hashes(string: str) -> str:
@@ -58,8 +44,83 @@ def check_password(raw_password: str, encrypted_password: str) -> bool:
     return password_hash(algorithm, raw_password, salt, iterations) == hash_b64
 
 
+def get_private_key(key_file):
+    with open(key_file, 'rb') as f:
+        return serialization.load_pem_private_key(f.read(), password=None)
+
+
+def get_public_key(key_file):
+    with open(key_file, 'rb') as f:
+        return serialization.load_pem_public_key(f.read())
+
+
+PUBLIC_KEY = get_public_key(app.config.get('EMAIL_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
+PRIVATE_KEY = get_private_key(app.config.get('EMAIL_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
+PADDING = padding.OAEP(
+    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+    algorithm=hashes.SHA256(),
+    label=None
+)
+
+
+def rsa_encrypt(plaintext: str) -> str:
+    encrypted_bytes = PUBLIC_KEY.encrypt(plaintext.encode('utf-8'), PADDING)
+    return base64.b64encode(encrypted_bytes).decode('utf-8')
+
+
+def rsa_decrypt(encrypted: str) -> str:
+    plain_bytes = PRIVATE_KEY.decrypt(base64.b64decode(encrypted), PADDING)
+    return plain_bytes.decode('utf-8')
+
+
+def _create_token(payload: dict) -> Tuple[str, str]:
+    payload['iat'] = datetime.now(tz=timezone.utc)
+
+    payload['type'] = 'access'
+    payload['exp'] = datetime.now(tz=timezone.utc) + timedelta(minutes=30)
+    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm='RS256')
+    payload['type'] = 'refresh'
+    payload['exp'] = datetime.now(tz=timezone.utc) + timedelta(days=30)
+    refresh_token = jwt.encode(payload, PRIVATE_KEY, algorithm='RS256')
+    return access_token, refresh_token
+
+
+def create_token(uid: int) -> Tuple[str, str]:
+    """
+    time: 7ms
+    """
+    payload = {
+        'uid': uid,
+        'iss': app.config.get('SITE_NAME', '')
+    }
+    return _create_token(payload)
+
+
+def verify_token(token: str, token_type='access') -> dict:
+    """
+    time: 0.3ms
+    """
+    try:
+        payload = jwt.decode(token, PUBLIC_KEY, algorithms=['RS256'])
+        if payload.get('type') != token_type:
+            payload = None
+    except (InvalidSignatureError, ExpiredSignatureError):
+        payload = None
+    return payload
+
+
+def refresh_token(token: str) -> Union[Tuple[str, str], bool]:
+    payload = verify_token(token, token_type='refresh')
+    if not payload:
+        return False
+    return _create_token(payload)
+
+
+@timer
+def main():
+    create_token(1)
+
+
 if __name__ == '__main__':
-    start = time.time()
-    many_hashes('hi')
-    end = time.time()
-    print(end - start)
+    app = get_sanic_app()
+    main()

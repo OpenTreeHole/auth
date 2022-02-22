@@ -2,7 +2,7 @@ from sanic import Sanic
 from tortoise import fields
 from tortoise.models import Model
 
-from utils.auth import encrypt_email, many_hashes, make_password
+from utils.auth import rsa_encrypt, many_hashes, make_password
 
 app = Sanic.get_app()
 
@@ -21,7 +21,7 @@ class User(Model):
     @classmethod
     async def create_user(cls, email: str, password: str, **kwargs) -> 'User':
         return await cls.create(
-            email=encrypt_email(email),
+            email=rsa_encrypt(email),
             identifier=many_hashes(email),
             password=make_password(password),
             **kwargs

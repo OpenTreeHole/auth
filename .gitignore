@@ -1,6 +1,5 @@
 .idea
 .venv
 *.env
-secrets
 
 db.sqlite3*
