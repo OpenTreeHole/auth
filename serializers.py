@@ -9,10 +9,11 @@ from utils.exceptions import ValidationError
 
 app = Sanic.get_app()
 
-
 # serialize object
 # user = await UserSerializer.from_tortoise_orm(user)
 # return json(user.json(), dumps=lambda x: x)
+UserSerializer = pydantic_model_creator(User)
+
 
 class LoginSerializer(BaseModel):
     email: str
@@ -36,4 +37,5 @@ class LoginSerializer(BaseModel):
         return password
 
 
-UserSerializer = pydantic_model_creator(User)
+class RefreshSerializer(BaseModel):
+    token: str

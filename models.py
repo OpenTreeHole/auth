@@ -2,7 +2,7 @@ from sanic import Sanic
 from tortoise import fields
 from tortoise.models import Model
 
-from utils.auth import rsa_encrypt, many_hashes, make_password, create_token
+from utils.auth import rsa_encrypt, many_hashes, make_password
 
 app = Sanic.get_app()
 
@@ -27,7 +27,4 @@ class User(Model):
             password=make_password(password),
             **kwargs
         )
-        _, refresh_token = create_token(user.id)
-        user.refresh_token = refresh_token
-        await user.save()
         return user

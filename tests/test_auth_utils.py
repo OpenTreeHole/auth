@@ -1,5 +1,5 @@
 from app import app
-from utils.auth import rsa_encrypt, rsa_decrypt, make_password, check_password, many_hashes, create_token, verify_token
+from utils.auth import rsa_encrypt, rsa_decrypt, make_password, check_password, many_hashes
 
 print(app)
 
@@ -22,11 +22,3 @@ def test_password():
 def test_hash():
     identifier = many_hashes('email')
     assert len(identifier) <= 128
-
-
-def test_jwt():
-    access, refresh = create_token(1)
-    assert len(access) <= 2000
-    assert len(refresh) <= 2000
-    assert isinstance(verify_token(access, token_type='access'), dict)
-    assert isinstance(verify_token(refresh, token_type='refresh'), dict)

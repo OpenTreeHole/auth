@@ -1,23 +1,18 @@
 import base64
 import hashlib
 import secrets
-from datetime import datetime, timezone, timedelta
-from typing import Tuple, Union
 
-import jwt
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-from jwt import InvalidSignatureError, ExpiredSignatureError
 from sanic import Sanic
 
 from settings import get_sanic_app
-from utils.test import timer
 
 app = Sanic.get_app()
 
 
 def many_hashes(string: str) -> str:
-    iterations = 10 ** 6
+    iterations = 1
     byte_string = bytes(string.encode('utf-8'))
     return hashlib.pbkdf2_hmac('sha3_512', byte_string, b'', iterations).hex()
 
@@ -56,8 +51,6 @@ def get_public_key(key_file):
 
 PUBLIC_KEY = get_public_key(app.config.get('EMAIL_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
 PRIVATE_KEY = get_private_key(app.config.get('EMAIL_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
-JWT_PUBLIC_KEY = get_public_key(app.config.get('JWT_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
-JWT_PRIVATE_KEY = get_private_key(app.config.get('JWT_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
 
 PADDING = padding.OAEP(
     mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -76,54 +69,6 @@ def rsa_decrypt(encrypted: str) -> str:
     return plain_bytes.decode('utf-8')
 
 
-def _create_token(payload: dict) -> Tuple[str, str]:
-    payload['iat'] = datetime.now(tz=timezone.utc)
-
-    payload['type'] = 'access'
-    payload['exp'] = datetime.now(tz=timezone.utc) + timedelta(minutes=30)
-    access_token = jwt.encode(payload, JWT_PRIVATE_KEY, algorithm='RS256')
-    payload['type'] = 'refresh'
-    payload['exp'] = datetime.now(tz=timezone.utc) + timedelta(days=30)
-    refresh_token = jwt.encode(payload, JWT_PRIVATE_KEY, algorithm='RS256')
-    return access_token, refresh_token
-
-
-def create_token(uid: int) -> Tuple[str, str]:
-    """
-    time: 7ms
-    """
-    payload = {
-        'uid': uid,
-        'iss': app.config.get('SITE_NAME', '')
-    }
-    return _create_token(payload)
-
-
-def verify_token(token: str, token_type='access') -> dict:
-    """
-    time: 0.3ms
-    """
-    try:
-        payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=['RS256'])
-        if payload.get('type') != token_type:
-            payload = None
-    except (InvalidSignatureError, ExpiredSignatureError):
-        payload = None
-    return payload
-
-
-def refresh_token(token: str) -> Union[Tuple[str, str], bool]:
-    payload = verify_token(token, token_type='refresh')
-    if not payload:
-        return False
-    return _create_token(payload)
-
-
-@timer
-def main():
-    create_token(1)
-
-
 if __name__ == '__main__':
     app = get_sanic_app()
-    main()
+    print(many_hashes('20300680017@fudan.edu.cn'))
