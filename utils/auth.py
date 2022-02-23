@@ -57,7 +57,7 @@ def get_public_key(key_file):
 PUBLIC_KEY = get_public_key(app.config.get('EMAIL_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
 PRIVATE_KEY = get_private_key(app.config.get('EMAIL_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
 JWT_PUBLIC_KEY = get_public_key(app.config.get('JWT_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
-JWT_PRIVATE_KEY = get_public_key(app.config.get('JWT_PRIVATE_KEY_PATH', 'data/treehole_demo_public.pem'))
+JWT_PRIVATE_KEY = get_private_key(app.config.get('JWT_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
 
 PADDING = padding.OAEP(
     mgf=padding.MGF1(algorithm=hashes.SHA256()),
