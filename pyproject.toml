@@ -19,6 +19,7 @@ PyJWT = { extras = ["crypto"], version = "^2.3.0" }
 [tool.poetry.dev-dependencies]
 sanic-testing = "^0.8.2"
 pytest-asyncio = "^0.18.1"
+pytest-xdist = "^2.5.0"
 
 
 [tool.aerich]
