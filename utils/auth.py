@@ -56,6 +56,9 @@ def get_public_key(key_file):
 
 PUBLIC_KEY = get_public_key(app.config.get('EMAIL_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
 PRIVATE_KEY = get_private_key(app.config.get('EMAIL_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
+JWT_PUBLIC_KEY = get_public_key(app.config.get('JWT_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
+JWT_PRIVATE_KEY = get_public_key(app.config.get('JWT_PRIVATE_KEY_PATH', 'data/treehole_demo_public.pem'))
+
 PADDING = padding.OAEP(
     mgf=padding.MGF1(algorithm=hashes.SHA256()),
     algorithm=hashes.SHA256(),
@@ -78,10 +81,10 @@ def _create_token(payload: dict) -> Tuple[str, str]:
 
     payload['type'] = 'access'
     payload['exp'] = datetime.now(tz=timezone.utc) + timedelta(minutes=30)
-    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm='RS256')
+    access_token = jwt.encode(payload, JWT_PRIVATE_KEY, algorithm='RS256')
     payload['type'] = 'refresh'
     payload['exp'] = datetime.now(tz=timezone.utc) + timedelta(days=30)
-    refresh_token = jwt.encode(payload, PRIVATE_KEY, algorithm='RS256')
+    refresh_token = jwt.encode(payload, JWT_PRIVATE_KEY, algorithm='RS256')
     return access_token, refresh_token
 
 
@@ -101,7 +104,7 @@ def verify_token(token: str, token_type='access') -> dict:
     time: 0.3ms
     """
     try:
-        payload = jwt.decode(token, PUBLIC_KEY, algorithms=['RS256'])
+        payload = jwt.decode(token, JWT_PUBLIC_KEY, algorithms=['RS256'])
         if payload.get('type') != token_type:
             payload = None
     except (InvalidSignatureError, ExpiredSignatureError):
