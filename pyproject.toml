@@ -14,7 +14,7 @@ aiosqlite = "^0.17.0"
 pycryptodome = "^3.14.1"
 aerich = "^0.6.2"
 pydantic = "^1.9.0"
-PyJWT = {extras = ["crypto"], version = "^2.3.0"}
+PyJWT = { extras = ["crypto"], version = "^2.3.0" }
 
 [tool.poetry.dev-dependencies]
 sanic-testing = "^0.8.2"
@@ -22,7 +22,7 @@ pytest-asyncio = "^0.18.1"
 
 
 [tool.aerich]
-tortoise_orm = "models.TORTOISE_ORM"
+tortoise_orm = "settings.TORTOISE_ORM"
 location = "./migrations"
 src_folder = "./."
 [build-system]

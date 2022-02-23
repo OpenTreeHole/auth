@@ -10,6 +10,10 @@ from utils.exceptions import ValidationError
 app = Sanic.get_app()
 
 
+# serialize object
+# user = await UserSerializer.from_tortoise_orm(user)
+# return json(user.json(), dumps=lambda x: x)
+
 class LoginSerializer(BaseModel):
     email: str
     password: str

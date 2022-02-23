@@ -28,8 +28,9 @@ class TestApis(test.TestCase):
         }
         await User.create_user(**data)
         req, res = await app.asgi_client.post('/login', json=data)
-        print(res.json)
         assert res.status == 200
+        assert res.json['access']
+        assert res.json['refresh']
 
     async def test_login_wrong_password(self):
         data = {
