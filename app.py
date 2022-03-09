@@ -5,15 +5,24 @@ from sanic.exceptions import Unauthorized
 from sanic_ext import validate
 
 from settings import get_sanic_app
-from utils.exceptions import BadRequest
+from utils.common import authorized
 
 app = get_sanic_app()
 
 from models import User
-from serializers import LoginSerializer, RefreshSerializer
+from serializers import LoginSerializer
 from utils.auth import many_hashes, check_password
-from utils.jwt_utils import verify_token, create_tokens
+from utils.jwt_utils import create_tokens
 from utils.db import get_object_or_404
+
+
+@app.middleware('request')
+async def add_token(request):
+    """
+    获取 token 而不作检测
+    """
+    authorization = request.headers.get('authorization', 'Bearer ')
+    request.ctx.token = authorization[7:].strip()
 
 
 @app.get('/')
@@ -21,9 +30,18 @@ async def home(request):
     return json({'message': 'hello world'})
 
 
+@app.get('/login_required')
+@authorized()
+async def login_required(request):
+    return json({'message': 'you are currently logged in', 'uid': request.ctx.user.id})
+
+
 @app.post('/login')
 @validate(json=LoginSerializer)
 async def login(request, body: LoginSerializer):
+    """
+    用户名密码登录，返回 access token 和 refresh token
+    """
     user = await get_object_or_404(User, identifier=many_hashes(body.email))
     if not check_password(body.password, user.password):
         raise Unauthorized('password incorrect')
@@ -31,15 +49,25 @@ async def login(request, body: LoginSerializer):
     return json({'access': access_token, 'refresh': refresh_token})
 
 
+@app.get('/logout')
+@authorized()
+async def logout(request):
+    """
+    单点退出，吊销 refresh token
+    """
+    user: User = request.ctx.user
+    user.refresh_token = ''
+    await user.save()
+    return json({'message': 'logout successful'})
+
+
 @app.post('/refresh')
-@validate(json=RefreshSerializer)
-async def refresh(request, body: RefreshSerializer):
-    payload = verify_token(body.token, token_type='refresh')
-    if not payload:
-        raise BadRequest('refresh token invalid')
-    user = await get_object_or_404(User, id=payload.get('uid'))
-    if not user.refresh_token == body.token:
-        raise BadRequest('refresh token invalid')
+@authorized(token_type='refresh')
+async def refresh(request):
+    """
+    header 里面带 refresh token，返回 access token 和 refresh token
+    """
+    user: User = request.ctx.user
     access_token, refresh_token = await create_tokens(user)
     return json({'access': access_token, 'refresh': refresh_token})
 

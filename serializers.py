@@ -35,7 +35,3 @@ class LoginSerializer(BaseModel):
         if len(password) < 8:
             raise ValidationError('password too weak')
         return password
-
-
-class RefreshSerializer(BaseModel):
-    token: str

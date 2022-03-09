@@ -17,13 +17,58 @@ def initialize_tests(request):
     request.addfinalizer(finalizer)
 
 
-class TestLogin(test.TestCase):
+ACCESS_TOKEN = ''
+REFRESH_TOKEN = ''
+USER = User()
+
+
+class TestSetUp(test.TestCase):
+    @pytest.mark.run(order=1)
+    async def test_set_up(self):
+        """
+        没用，好像不同的类用的数据库不一样
+        """
+        global ACCESS_TOKEN
+        global REFRESH_TOKEN
+        global USER
+
+        data = {
+            'email': 'test@test.com',
+            'password': 'password'
+        }
+        USER = await User.create_user(**data)
+        req, res = await app.asgi_client.post('/login', json=data)
+        ACCESS_TOKEN = res.json['access']
+        REFRESH_TOKEN = res.json['refresh']
+
+
+class TestCommon(test.TestCase):
     async def test_home(self):
         req, res = await app.asgi_client.get('/')
         assert res.status == 200
         assert res.json == {'message': 'hello world'}
 
-    async def test_login_and_refresh(self):
+    async def test_login_required(self):
+        data = {
+            'email': 'test_login_required@test.com',
+            'password': 'password'
+        }
+        user = await User.create_user(**data)
+        req, res = await app.asgi_client.post('/login', json=data)
+        access_token = res.json['access']
+
+        req, res = await app.asgi_client.get('/login_required')
+        assert res.status == 401
+        assert res.json['message'] == 'access token invalid'
+
+        req, res = await app.asgi_client.get('/login_required', headers={'Authorization': f'Bearer {access_token}'})
+        assert res.status == 200
+        assert res.json['message'] == 'you are currently logged in'
+        assert res.json['uid'] == user.id
+
+
+class TestLogin(test.TestCase):
+    async def test_login(self):
         data = {
             'email': '1@test.com',
             'password': 'password'
@@ -31,16 +76,8 @@ class TestLogin(test.TestCase):
         await User.create_user(**data)
         req, res = await app.asgi_client.post('/login', json=data)
         assert res.status == 200
-        old_access = res.json['access']
-        old_refresh = res.json['refresh']
-        # test refresh
-        await asyncio.sleep(1)
-        req, res = await app.asgi_client.post('/refresh', json={'token': old_refresh})
-        assert res.status == 200
-        access = res.json['access']
-        refresh = res.json['refresh']
-        assert refresh == old_refresh
-        assert decode_payload(old_access).get('exp') < decode_payload(access).get('exp')
+        assert 'access' in res.json
+        assert 'refresh' in res.json
 
     async def test_login_wrong_password(self):
         data = {
@@ -62,7 +99,43 @@ class TestLogin(test.TestCase):
         assert res.status == 404
         assert res.json['message'] == 'User does not exist'
 
+
+class TestLogout(test.TestCase):
+    async def test_logout(self):
+        data = {
+            'email': 'test_logout@test.com',
+            'password': 'password'
+        }
+        user = await User.create_user(**data)
+        req, res = await app.asgi_client.post('/login', json=data)
+        access_token = res.json['access']
+
+        req, res = await app.asgi_client.get('/logout', headers={'Authorization': f'Bearer {access_token}'})
+        assert res.status == 200
+        assert res.json['message'] == 'logout successful'
+        user = await User.get(id=user.id)
+        assert user.refresh_token == ''
+
+
+class TestRefresh(test.TestCase):
+    async def test_refresh(self):
+        data = {
+            'email': '4@test.com',
+            'password': 'password'
+        }
+        await User.create_user(**data)
+        req, res = await app.asgi_client.post('/login', json=data)
+        old_access = res.json['access']
+        old_refresh = res.json['refresh']
+        await asyncio.sleep(1)
+        req, res = await app.asgi_client.post('/refresh', headers={'Authorization': f'Bearer {old_refresh}'})
+        assert res.status == 200
+        access = res.json['access']
+        refresh = res.json['refresh']
+        assert refresh == old_refresh
+        assert decode_payload(old_access).get('exp') < decode_payload(access).get('exp')
+
     async def test_wrong_refresh(self):
-        req, res = await app.asgi_client.post('/refresh', json={'token': ''})
-        assert res.status == 400
+        req, res = await app.asgi_client.post('/refresh')
+        assert res.status == 401
         assert res.json['message'] == 'refresh token invalid'
