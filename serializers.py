@@ -1,6 +1,4 @@
-import re
-
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, EmailStr
 from sanic import Sanic
 from tortoise.contrib.pydantic import pydantic_model_creator
 
@@ -15,20 +13,23 @@ app = Sanic.get_app()
 UserSerializer = pydantic_model_creator(User)
 
 
-class LoginSerializer(BaseModel):
-    email: str
-    password: str
+class EmailModel(BaseModel):
+    email: EmailStr
 
     @validator('email')
     def email_in_whitelist(cls, email):
-        match = re.match(r'.+@(.+\..+)', email)
-        if not match:
-            raise ValidationError('invalid email format')
-        domain = match.group(1)
+        domain = email[email.find('@') + 1:]
         whitelist = app.config.get('EMAIL_WHITELIST', [])
         if len(whitelist) > 0 and domain not in whitelist:  # 未设置 whitelist 时不检查
             raise ValidationError('email not in whitelist')
         return email
+
+
+class LoginModel(EmailModel):
+    """
+    email, password
+    """
+    password: str
 
     @validator('password')
     def password_too_weak(cls, password):
