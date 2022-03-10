@@ -2,6 +2,7 @@ import time
 from functools import wraps
 from inspect import isawaitable
 
+from sanic import Request
 from sanic.exceptions import Unauthorized
 
 from models import User
@@ -22,7 +23,7 @@ def timer(func):
 def authorized(token_type='access'):
     def decorator(f):
         @wraps(f)
-        async def decorated_function(request, *args, **kwargs):
+        async def decorated_function(request: Request, *args, **kwargs):
             if token_type == 'access':
                 payload = verify_token(request.ctx.token)
             else:

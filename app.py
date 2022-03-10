@@ -1,6 +1,6 @@
 import multiprocessing
 
-from sanic import json
+from sanic import json, Request
 from sanic.exceptions import Unauthorized
 from sanic_ext import validate
 
@@ -17,7 +17,7 @@ from utils.db import get_object_or_404
 
 
 @app.middleware('request')
-async def add_token(request):
+async def add_token(request: Request):
     """
     获取 token 而不作检测
     """
@@ -26,19 +26,19 @@ async def add_token(request):
 
 
 @app.get('/')
-async def home(request):
+async def home(request: Request):
     return json({'message': 'hello world'})
 
 
 @app.get('/login_required')
 @authorized()
-async def login_required(request):
+async def login_required(request: Request):
     return json({'message': 'you are currently logged in', 'uid': request.ctx.user.id})
 
 
 @app.post('/login')
 @validate(json=LoginSerializer)
-async def login(request, body: LoginSerializer):
+async def login(request: Request, body: LoginSerializer):
     """
     用户名密码登录，返回 access token 和 refresh token
     """
@@ -51,7 +51,7 @@ async def login(request, body: LoginSerializer):
 
 @app.get('/logout')
 @authorized()
-async def logout(request):
+async def logout(request: Request):
     """
     单点退出，吊销 refresh token
     """
@@ -63,7 +63,7 @@ async def logout(request):
 
 @app.post('/refresh')
 @authorized(token_type='refresh')
-async def refresh(request):
+async def refresh(request: Request):
     """
     header 里面带 refresh token，返回 access token 和 refresh token
     """
@@ -73,7 +73,7 @@ async def refresh(request):
 
 
 @app.post('/register')
-async def register(request):
+async def register(request: Request):
     return json({})
 
 
