@@ -2,15 +2,15 @@ import multiprocessing
 
 from sanic import json, Request
 from sanic.exceptions import Unauthorized
-from sanic_ext import validate
 
 from settings import get_sanic_app
 from utils.common import authorized
+from utils.validator import validate
 
 app = get_sanic_app()
 
 from models import User
-from serializers import LoginSerializer
+from serializers import LoginModel, EmailModel
 from utils.auth import many_hashes, check_password
 from utils.jwt_utils import create_tokens
 from utils.db import get_object_or_404
@@ -37,8 +37,8 @@ async def login_required(request: Request):
 
 
 @app.post('/login')
-@validate(json=LoginSerializer)
-async def login(request: Request, body: LoginSerializer):
+@validate(json=LoginModel)
+async def login(request: Request, body: LoginModel):
     """
     用户名密码登录，返回 access token 和 refresh token
     """
@@ -70,6 +70,12 @@ async def refresh(request: Request):
     user: User = request.ctx.user
     access_token, refresh_token = await create_tokens(user)
     return json({'access': access_token, 'refresh': refresh_token})
+
+
+@app.get('/verify/email/<email:str>')
+@validate(match=EmailModel)
+async def verify_with_email(request: Request, match: EmailModel, **kwargs):
+    return json({'message': match.email})
 
 
 @app.post('/register')
