@@ -2,6 +2,7 @@ import json
 import re
 from json import JSONDecodeError
 
+from aiocache import Cache
 from sanic import Sanic
 from sanic.log import logger
 from tortoise import Tortoise
@@ -60,6 +61,9 @@ async def init(*args, **kwargs):
 async def close(*args, **kwargs):
     if MODE != 'test':
         await Tortoise.close_connections()
+
+
+cache = Cache()
 
 
 def get_sanic_app() -> Sanic:
