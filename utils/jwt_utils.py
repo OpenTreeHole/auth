@@ -82,5 +82,16 @@ async def get_or_create_refresh_token(user: User) -> str:
     return await create_refresh_token(user)
 
 
-async def create_tokens(user: User) -> Tuple[str, str]:
+async def create_tokens(user: User, reset=False) -> Tuple[str, str]:
+    """
+    Args:
+        user: User
+        reset: 重置 refresh token
+
+    Returns:
+        access_token, refresh_token
+
+    """
+    if reset:
+        return create_access_token(user), await create_refresh_token(user)
     return create_access_token(user), await get_or_create_refresh_token(user)

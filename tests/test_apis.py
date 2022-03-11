@@ -222,3 +222,29 @@ class TestRegister(test.TestCase):
         req, res = await app.asgi_client.post('/register', json=data)
         assert res.status == 400
         assert res.json['message'] == '该用户已注册，如果忘记密码，请使用忘记密码功能找回'
+
+    async def test_reset_password(self):
+        data = {
+            'email': 'test_reset_password@test.com',
+            'password': 'password',
+            'verification': '123456'
+        }
+        req, res = await app.asgi_client.put('/register', json=data)
+        assert res.status == 400
+        assert res.json['message'] == '验证码错误'
+
+        code = await set_verification_code(email=data['email'], scope='reset')
+        data['verification'] = code
+        req, res = await app.asgi_client.put('/register', json=data)
+        assert res.status == 404
+
+        await User.create_user(**data)
+        data['password'] = 'new password'
+        req, res = await app.asgi_client.put('/register', json=data)
+        assert res.status == 200
+        assert res.json['message'] == '重置密码成功'
+        assert res.json['access']
+        assert res.json['refresh']
+        assert await check_verification_code(data['email'], code, 'register') is False
+        req, res = await app.asgi_client.post('/login', json=data)
+        assert res.status == 200

@@ -13,7 +13,7 @@ app = get_sanic_app()
 from models import User
 from serializers import LoginModel, EmailModel, ApikeyVerifyModel, RegisterModel
 from utils.auth import many_hashes, check_password, set_verification_code, check_api_key, check_verification_code, \
-    delete_verification_code
+    delete_verification_code, make_password
 from utils.jwt_utils import create_tokens
 from utils.db import get_object_or_404
 
@@ -133,6 +133,22 @@ async def register(request: Request, body: RegisterModel):
     access_token, refresh_token = await create_tokens(user)
     await delete_verification_code(body.email, 'register')
     return json({'access': access_token, 'refresh': refresh_token, 'message': '注册成功'}, 201)
+
+
+@app.put('/register')
+@validate(json=RegisterModel)
+async def register(request: Request, body: RegisterModel):
+    """
+    修改密码，重置 refresh token
+    """
+    if not await check_verification_code(body.email, body.verification, 'reset'):
+        raise BadRequest('验证码错误')
+    user = await get_object_or_404(User, identifier=many_hashes(body.email))
+    user.password = make_password(body.password)
+    user.save()
+    access_token, refresh_token = await create_tokens(user, reset=True)
+    await delete_verification_code(body.email, 'reset')
+    return json({'access': access_token, 'refresh': refresh_token, 'message': '重置密码成功'}, 200)
 
 
 if __name__ == '__main__':
