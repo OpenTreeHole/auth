@@ -1,7 +1,7 @@
 import multiprocessing
 
 from sanic import json, Request
-from sanic.exceptions import Unauthorized
+from sanic.exceptions import Unauthorized, Forbidden
 
 from settings import get_sanic_app
 from utils.common import authorized, send_email
@@ -10,8 +10,8 @@ from utils.validator import validate
 app = get_sanic_app()
 
 from models import User
-from serializers import LoginModel, EmailModel
-from utils.auth import many_hashes, check_password, set_verification_code
+from serializers import LoginModel, EmailModel, ApikeyVerifyModel
+from utils.auth import many_hashes, check_password, set_verification_code, check_api_key
 from utils.jwt_utils import create_tokens
 from utils.db import get_object_or_404
 
@@ -98,8 +98,26 @@ async def verify_with_email(request: Request, match: EmailModel, **kwargs):
         )
     return json({
         'message': '验证邮件已发送，请查收\n如未收到，请检查邮件地址是否正确，检查垃圾箱，或重试',
-        'type': scope
+        'scope': scope
     })
+
+
+@app.get('/verify/apikey')
+@validate(query=ApikeyVerifyModel)
+async def verify_with_apikey(request: Request, query: ApikeyVerifyModel):
+    """
+    只能注册用
+    """
+    scope = 'register'
+    if not check_api_key(query.apikey):
+        raise Forbidden('API Key 不正确')
+    if await User.filter(identifier=many_hashes(query.email)).exists():
+        return json({'message': '用户已注册'}, 409)
+    if query.check_register:
+        return json({'message': '用户未注册'})
+
+    code = await set_verification_code(email=query.email, scope=scope)
+    return json({'message': '验证成功', 'code': code, 'scope': scope})
 
 
 @app.post('/register')

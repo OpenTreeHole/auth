@@ -8,7 +8,7 @@ from tortoise.contrib.test import finalizer, initializer
 from app import app
 from models import User
 from settings import cache
-from utils.auth import many_hashes
+from utils.auth import many_hashes, totp
 from utils.jwt_utils import decode_payload
 
 
@@ -144,9 +144,9 @@ class TestRefresh(test.TestCase):
 
 
 class TestRegister(test.TestCase):
-    async def test_verify(self):
+    async def test_verify_with_email(self):
         data = {
-            'email': 'testverify@test.com',
+            'email': 'test_verify_with_email@test.com',
             'password': 'password'
         }
         email = data['email']
@@ -154,7 +154,7 @@ class TestRegister(test.TestCase):
         req, res = await app.asgi_client.get(f'/verify/email/{email}')
         assert res.status == 200
         assert res.json['message']
-        assert res.json['type'] == 'register'
+        assert res.json['scope'] == 'register'
         code = await cache.get(f'register-{many_hashes(email)}')
         assert len(code) == 6
         assert isinstance(code, str)
@@ -163,5 +163,36 @@ class TestRegister(test.TestCase):
         req, res = await app.asgi_client.get(f'/verify/email/{email}')
         assert res.status == 200
         assert res.json['message']
-        assert res.json['type'] == 'reset'
+        assert res.json['scope'] == 'reset'
         assert await cache.get(f'reset-{many_hashes(email)}')
+
+    async def test_verify_with_apikey(self):
+        params = {
+            'apikey': '123456',
+            'email': 'test_verify_with_apikey@test.com',
+            'check_register': False
+        }
+        data = {
+            'email': 'test_verify_with_apikey@test.com',
+            'password': 'password'
+        }
+        req, res = await app.asgi_client.get('/verify/apikey', params=params)
+        assert res.status == 403
+        assert res.json['message'] == 'API Key 不正确'
+
+        params['apikey'] = totp.now()
+        req, res = await app.asgi_client.get('/verify/apikey', params=params)
+        assert res.status == 200
+        assert res.json['message'] == '验证成功'
+        assert res.json['scope'] == 'register'
+        assert res.json['code'] == await cache.get(f'register-{many_hashes(params["email"])}')
+
+        params['check_register'] = True
+        req, res = await app.asgi_client.get('/verify/apikey', params=params)
+        assert res.status == 200
+        assert res.json['message'] == '用户未注册'
+
+        await User.create_user(**data)
+        req, res = await app.asgi_client.get('/verify/apikey', params=params)
+        assert res.status == 409
+        assert res.json['message'] == '用户已注册'

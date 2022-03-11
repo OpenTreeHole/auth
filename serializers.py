@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, validator, EmailStr
 from sanic import Sanic
 from tortoise.contrib.pydantic import pydantic_model_creator
@@ -36,3 +38,8 @@ class LoginModel(EmailModel):
         if len(password) < 8:
             raise ValidationError('password too weak')
         return password
+
+
+class ApikeyVerifyModel(EmailModel):
+    apikey: str
+    check_register: Optional[bool] = False
