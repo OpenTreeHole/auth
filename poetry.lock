@@ -462,6 +462,14 @@ python-versions = "*"
 rsa = ["cryptography"]
 
 [[package]]
+name = "pyotp"
+version = "2.6.0"
+description = "Python One Time Password Library"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "pyparsing"
 version = "3.0.7"
 description = "Python parsing module"
@@ -729,7 +737,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "224db8f4f179db3e2a4cc77d2e0d1b0c345fc902aab77b7caeed0ed0fbec66b8"
+content-hash = "1a8daf348e4130a4f647a18fa7eb291c0c3181335f81c81630c312e3aa06240a"
 
 [metadata.files]
 aerich = [
@@ -1106,6 +1114,10 @@ pyjwt = [
 pymysql = [
     {file = "PyMySQL-0.9.3-py2.py3-none-any.whl", hash = "sha256:3943fbbbc1e902f41daf7f9165519f140c4451c179380677e6a848587042561a"},
     {file = "PyMySQL-0.9.3.tar.gz", hash = "sha256:d8c059dcd81dedb85a9f034d5e22dcb4442c0b201908bede99e306d65ea7c8e7"},
+]
+pyotp = [
+    {file = "pyotp-2.6.0-py2.py3-none-any.whl", hash = "sha256:9d144de0f8a601d6869abe1409f4a3f75f097c37b50a36a3bf165810a6e23f28"},
+    {file = "pyotp-2.6.0.tar.gz", hash = "sha256:d28ddfd40e0c1b6a6b9da961c7d47a10261fb58f378cb00f05ce88b26df9c432"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.7-py3-none-any.whl", hash = "sha256:a6c06a88f252e6c322f65faf8f418b16213b51bdfaece0524c1c1bc30c63c484"},

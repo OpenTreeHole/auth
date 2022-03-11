@@ -1,4 +1,3 @@
-import secrets
 import time
 from email.message import EmailMessage
 from functools import wraps
@@ -10,8 +9,6 @@ from sanic import Request, Sanic
 from sanic.exceptions import Unauthorized
 
 from models import User
-from settings import cache
-from utils.auth import many_hashes
 from utils.db import get_object_or_404
 from utils.jwt_utils import verify_refresh_token, verify_token
 
@@ -49,19 +46,6 @@ def authorized(token_type='access'):
         return decorated_function
 
     return decorator
-
-
-async def set_verification_code(email: str) -> str:
-    """
-    缓存中设置验证码，key 为 hashed
-    """
-    code = str(secrets.randbelow(1000000)).zfill(6)
-    await cache.set(
-        key=many_hashes(email),
-        value=code,
-        ttl=app.config['VERIFICATION_CODE_EXPIRES'] * 60
-    )
-    return code
 
 
 async def send_email(subject: str, content: str, receivers: Union[List[str], str]) -> bool:

@@ -150,13 +150,12 @@ class TestRegister(test.TestCase):
             'password': 'password'
         }
         email = data['email']
-        key = many_hashes(email)
 
         req, res = await app.asgi_client.get(f'/verify/email/{email}')
         assert res.status == 200
         assert res.json['message']
         assert res.json['type'] == 'register'
-        code = await cache.get(key)
+        code = await cache.get(f'register-{many_hashes(email)}')
         assert len(code) == 6
         assert isinstance(code, str)
 
@@ -165,4 +164,4 @@ class TestRegister(test.TestCase):
         assert res.status == 200
         assert res.json['message']
         assert res.json['type'] == 'reset'
-        assert await cache.get(key) != code
+        assert await cache.get(f'reset-{many_hashes(email)}')

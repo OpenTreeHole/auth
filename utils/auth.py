@@ -2,11 +2,12 @@ import base64
 import hashlib
 import secrets
 
+import pyotp
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from sanic import Sanic
 
-from settings import get_sanic_app
+from settings import cache
 
 app = Sanic.get_app()
 
@@ -69,6 +70,32 @@ def rsa_decrypt(encrypted: str) -> str:
     return plain_bytes.decode('utf-8')
 
 
-if __name__ == '__main__':
-    app = get_sanic_app()
-    print(many_hashes('20300680017@fudan.edu.cn'))
+totp = pyotp.TOTP(
+    base64.b32encode(app.config.get('REGISTER_API_KEY_SEED', '').encode()).decode(),
+    digest=hashlib.sha256, interval=5, digits=16
+)
+
+
+def check_api_key(key_to_check: str) -> bool:
+    return totp.verify(key_to_check, valid_window=1)
+
+
+async def set_verification_code(email: str, scope='register') -> str:
+    """
+    缓存中设置验证码，key = {scope}-{many_hashes(email)}
+    """
+    code = str(secrets.randbelow(1000000)).zfill(6)
+    await cache.set(
+        key=f'{scope}-{many_hashes(email)}',
+        value=code,
+        ttl=app.config['VERIFICATION_CODE_EXPIRES'] * 60
+    )
+    return code
+
+
+async def check_verification_code(email: str, code: str, scope='register') -> bool:
+    """
+    检查验证码
+    """
+    stored_code = await cache.get(f'{scope}-{many_hashes(email)}')
+    return code == stored_code
