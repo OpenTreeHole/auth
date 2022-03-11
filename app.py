@@ -5,13 +5,15 @@ from sanic.exceptions import Unauthorized, Forbidden
 
 from settings import get_sanic_app
 from utils.common import authorized, send_email
+from utils.exceptions import BadRequest
 from utils.validator import validate
 
 app = get_sanic_app()
 
 from models import User
-from serializers import LoginModel, EmailModel, ApikeyVerifyModel
-from utils.auth import many_hashes, check_password, set_verification_code, check_api_key
+from serializers import LoginModel, EmailModel, ApikeyVerifyModel, RegisterModel
+from utils.auth import many_hashes, check_password, set_verification_code, check_api_key, check_verification_code, \
+    delete_verification_code
 from utils.jwt_utils import create_tokens
 from utils.db import get_object_or_404
 
@@ -121,8 +123,16 @@ async def verify_with_apikey(request: Request, query: ApikeyVerifyModel):
 
 
 @app.post('/register')
-async def register(request: Request):
-    return json({})
+@validate(json=RegisterModel)
+async def register(request: Request, body: RegisterModel):
+    if not await check_verification_code(body.email, body.verification, 'register'):
+        raise BadRequest('验证码错误')
+    if await User.filter(identifier=many_hashes(body.email)).exists():
+        raise BadRequest('该用户已注册，如果忘记密码，请使用忘记密码功能找回')
+    user = await User.create_user(email=body.email, password=body.password)
+    access_token, refresh_token = await create_tokens(user)
+    await delete_verification_code(body.email, 'register')
+    return json({'access': access_token, 'refresh': refresh_token, 'message': '注册成功'}, 201)
 
 
 if __name__ == '__main__':

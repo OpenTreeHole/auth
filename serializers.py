@@ -43,3 +43,10 @@ class LoginModel(EmailModel):
 class ApikeyVerifyModel(EmailModel):
     apikey: str
     check_register: Optional[bool] = False
+
+
+class RegisterModel(LoginModel):
+    """
+    email, password, code
+    """
+    verification: str

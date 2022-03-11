@@ -99,3 +99,10 @@ async def check_verification_code(email: str, code: str, scope='register') -> bo
     """
     stored_code = await cache.get(f'{scope}-{many_hashes(email)}')
     return code == stored_code
+
+
+async def delete_verification_code(email: str, scope='register') -> int:
+    """
+    删除验证码
+    """
+    return await cache.delete(f'{scope}-{many_hashes(email)}')

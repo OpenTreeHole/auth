@@ -8,7 +8,7 @@ from tortoise.contrib.test import finalizer, initializer
 from app import app
 from models import User
 from settings import cache
-from utils.auth import many_hashes, totp
+from utils.auth import many_hashes, totp, set_verification_code, check_verification_code
 from utils.jwt_utils import decode_payload
 
 
@@ -196,3 +196,29 @@ class TestRegister(test.TestCase):
         req, res = await app.asgi_client.get('/verify/apikey', params=params)
         assert res.status == 409
         assert res.json['message'] == '用户已注册'
+
+    async def test_register(self):
+        data = {
+            'email': 'test_register@test.com',
+            'password': 'password',
+            'verification': '123456'
+        }
+        req, res = await app.asgi_client.post('/register', json=data)
+        assert res.status == 400
+        assert res.json['message'] == '验证码错误'
+
+        code = await set_verification_code(email=data['email'], scope='register')
+        data['verification'] = code
+        req, res = await app.asgi_client.post('/register', json=data)
+        assert res.status == 201
+        assert res.json['message'] == '注册成功'
+        assert res.json['access']
+        assert res.json['refresh']
+        assert User.filter(identifier=many_hashes(data['email'])).exists()
+        assert await check_verification_code(data['email'], code, 'register') is False
+
+        code = await set_verification_code(email=data['email'], scope='register')
+        data['verification'] = code
+        req, res = await app.asgi_client.post('/register', json=data)
+        assert res.status == 400
+        assert res.json['message'] == '该用户已注册，如果忘记密码，请使用忘记密码功能找回'
