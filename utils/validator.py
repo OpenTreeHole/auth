@@ -1,6 +1,7 @@
 from functools import wraps
 from inspect import isawaitable
 from typing import Optional
+from urllib.parse import unquote
 
 from pydantic import BaseModel, ValidationError
 from sanic import Request
@@ -38,7 +39,11 @@ def validate(
             if json:
                 do_validate(json, request.json, kwargs, 'body')
             if match:
-                do_validate(match, request.match_info, kwargs, 'match')
+                match_info = request.match_info
+                for key in match_info:
+                    if isinstance(match_info[key], str):
+                        match_info[key] = unquote(match_info[key])
+                do_validate(match, match_info, kwargs, 'match')
             response = f(request, *args, **kwargs)
             if isawaitable(response):
                 response = await response
