@@ -8,6 +8,7 @@ from sanic.log import logger
 from tortoise import Tortoise
 
 
+# 环境变量可以解析 int，bool，无法解析数组
 def parse_array(s: str) -> list:
     try:
         return json.loads(s)
