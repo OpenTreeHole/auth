@@ -4,7 +4,7 @@ from sanic import json, Request
 from sanic.exceptions import Unauthorized
 
 from settings import get_sanic_app
-from utils.common import authorized
+from utils.common import authorized, set_verification_code, send_email
 from utils.validator import validate
 
 app = get_sanic_app()
@@ -75,7 +75,30 @@ async def refresh(request: Request):
 @app.get('/verify/email/<email:str>')
 @validate(match=EmailModel)
 async def verify_with_email(request: Request, match: EmailModel, **kwargs):
-    return json({'message': match.email})
+    code = await set_verification_code(match.email)
+    base_content = (
+        f'您的验证码是: {code}\r\n'
+        f'验证码的有效期为 {app.config["VERIFICATION_CODE_EXPIRES"]} 分钟\r\n'
+        '如果您意外地收到了此邮件，请忽略它'
+    )
+    user_exists = await User.filter(identifier=many_hashes(match.email)).exists()
+    if not user_exists:
+        # 用户不存在，注册邮件
+        await send_email(
+            subject=f'{app.config["SITE_NAME"]} 注册验证',
+            content=f'欢迎注册 {app.config["SITE_NAME"]}，{base_content}',
+            receivers=match.email
+        )
+    else:  # 用户存在，重置密码
+        await send_email(
+            subject=f'{app.config["SITE_NAME"]} 重置密码',
+            content=f'您正在重置密码，{base_content}',
+            receivers=match.email
+        )
+    return json({
+        'message': '验证邮件已发送，请查收\n如未收到，请检查邮件地址是否正确，检查垃圾箱，或重试',
+        'type': 'reset' if user_exists else 'register'
+    })
 
 
 @app.post('/register')

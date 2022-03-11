@@ -19,7 +19,9 @@ def parse_array(s: str) -> list:
 app = Sanic('auth')
 app.config['MODE'] = MODE = app.config.get('MODE', 'dev')
 app.config['DEBUG'] = (app.config['MODE'] != 'production')
+app.config['SITE_NAME'] = app.config.get('SITE_NAME', 'Open Tree Hole')
 app.config['EMAIL_WHITELIST'] = parse_array(app.config.get('EMAIL_WHITELIST', ''))
+app.config['VERIFICATION_CODE_EXPIRES'] = app.config.get('VERIFICATION_CODE_EXPIRES', 5)
 
 TORTOISE_ORM = {
     'apps': {

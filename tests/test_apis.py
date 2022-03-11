@@ -7,6 +7,8 @@ from tortoise.contrib.test import finalizer, initializer
 
 from app import app
 from models import User
+from settings import cache
+from utils.auth import many_hashes
 from utils.jwt_utils import decode_payload
 
 
@@ -139,3 +141,28 @@ class TestRefresh(test.TestCase):
         req, res = await app.asgi_client.post('/refresh')
         assert res.status == 401
         assert res.json['message'] == 'refresh token invalid'
+
+
+class TestRegister(test.TestCase):
+    async def test_verify(self):
+        data = {
+            'email': 'testverify@test.com',
+            'password': 'password'
+        }
+        email = data['email']
+        key = many_hashes(email)
+
+        req, res = await app.asgi_client.get(f'/verify/email/{email}')
+        assert res.status == 200
+        assert res.json['message']
+        assert res.json['type'] == 'register'
+        code = await cache.get(key)
+        assert len(code) == 6
+        assert isinstance(code, str)
+
+        await User.create_user(**data)
+        req, res = await app.asgi_client.get(f'/verify/email/{email}')
+        assert res.status == 200
+        assert res.json['message']
+        assert res.json['type'] == 'reset'
+        assert await cache.get(key) != code

@@ -59,17 +59,23 @@ async def set_verification_code(email: str) -> str:
     await cache.set(
         key=many_hashes(email),
         value=code,
-        ttl=app.config.get('VERIFICATION_CODE_EXPIRES', 5) * 60
+        ttl=app.config['VERIFICATION_CODE_EXPIRES'] * 60
     )
     return code
 
 
-async def send_email(title: str, content: str, receivers: Union[List[str], str]):
+async def send_email(subject: str, content: str, receivers: Union[List[str], str]) -> bool:
     message = EmailMessage()
     message['From'] = app.config.get('EMAIL_USER', '')
     message['To'] = ','.join(receivers) if isinstance(receivers, list) else receivers
-    message["Subject"] = title
+    message["Subject"] = subject
     message.set_content(content)
+
+    if app.config['DEBUG']:
+        for i in message.items():
+            print(f'{i[0]}: {i[1]}')
+        print('\n', message.get_content())
+        return True
 
     await aiosmtplib.send(
         message,
@@ -79,3 +85,4 @@ async def send_email(title: str, content: str, receivers: Union[List[str], str])
         password=app.config.get('EMAIL_PASSWORD', ''),
         use_tls=app.config.get('EMAIL_TLS', True)
     )
+    return True
