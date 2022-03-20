@@ -1,5 +1,4 @@
 import json
-import re
 from json import JSONDecodeError
 
 from aiocache import Cache
@@ -39,20 +38,9 @@ TORTOISE_ORM = {
     'use_tz': True,
     'timezone': app.config.get('TZ', 'UTC')
 }
-db_url = app.config.get('DB_URL', 'mysql://username:password@mysql:3306/auth')
-match = re.match(r'(.+)://(.+):(.+)@(.+):(.+)/(.+)', db_url)
 # aerich 暂不支持 sqlite
 TORTOISE_ORM.update({'connections': {
-    'default': {
-        'engine': f'tortoise.backends.{match.group(1)}',
-        'credentials': {
-            'host': match.group(4),
-            'port': match.group(5),
-            'user': match.group(2),
-            'password': match.group(3),
-            'database': match.group(6),
-        }
-    },
+    'default': app.config.get('DB_URL', 'mysql://username:password@mysql:3306/auth')
 }})
 
 if MODE != 'production':
