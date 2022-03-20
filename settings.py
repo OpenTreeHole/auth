@@ -22,6 +22,13 @@ app.config['DEBUG'] = (app.config['MODE'] != 'production')
 app.config['SITE_NAME'] = app.config.get('SITE_NAME', 'Open Tree Hole')
 app.config['EMAIL_WHITELIST'] = parse_array(app.config.get('EMAIL_WHITELIST', ''))
 app.config['VERIFICATION_CODE_EXPIRES'] = app.config.get('VERIFICATION_CODE_EXPIRES', 5)
+app.config.OAS_UI_DEFAULT = 'swagger'
+app.ext.openapi.add_security_scheme(
+    "token",
+    "http",
+    scheme="bearer",
+    bearer_format="JWT",
+)
 
 TORTOISE_ORM = {
     'apps': {

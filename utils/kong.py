@@ -76,7 +76,8 @@ async def connect_to_gateway():
         r = await c.get('/')
         if not r.status_code == 200:
             logger.error('Kong API gateway unreachable!')
-        logger.info('gateway connected')
+        else:
+            logger.info('gateway connected')
 
 
 asyncio.run(connect_to_gateway())
