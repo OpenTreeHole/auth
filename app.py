@@ -6,6 +6,7 @@ from sanic.exceptions import Unauthorized, Forbidden
 from settings import get_sanic_app
 from utils.common import authorized, send_email
 from utils.exceptions import BadRequest
+from utils.kong import delete_jwt_credentials
 from utils.validator import validate
 
 app = get_sanic_app()
@@ -58,8 +59,7 @@ async def logout(request: Request):
     单点退出，吊销 refresh token
     """
     user: User = request.ctx.user
-    user.refresh_token = ''
-    await user.save()
+    await delete_jwt_credentials(user.id)
     return json({'message': 'logout successful'})
 
 
@@ -67,7 +67,7 @@ async def logout(request: Request):
 @authorized(token_type='refresh')
 async def refresh(request: Request):
     """
-    header 里面带 refresh token，返回 access token 和 refresh token
+    header 里面带 refresh token，返回新的 access token 和 refresh token
     """
     user: User = request.ctx.user
     access_token, refresh_token = await create_tokens(user)
@@ -137,7 +137,7 @@ async def register(request: Request, body: RegisterModel):
 
 @app.put('/register')
 @validate(json=RegisterModel)
-async def register(request: Request, body: RegisterModel):
+async def change_password(request: Request, body: RegisterModel):
     """
     修改密码，重置 refresh token
     """
@@ -145,8 +145,9 @@ async def register(request: Request, body: RegisterModel):
         raise BadRequest('验证码错误')
     user = await get_object_or_404(User, identifier=many_hashes(body.email))
     user.password = make_password(body.password)
-    user.save()
-    access_token, refresh_token = await create_tokens(user, reset=True)
+    await user.save()
+    await delete_jwt_credentials(user.id)
+    access_token, refresh_token = await create_tokens(user)
     await delete_verification_code(body.email, 'reset')
     return json({'access': access_token, 'refresh': refresh_token, 'message': '重置密码成功'}, 200)
 

@@ -60,6 +60,7 @@ class TestCommon(test.TestCase):
         access_token = res.json['access']
 
         req, res = await app.asgi_client.get('/login_required')
+        print(res.json)
         assert res.status == 401
         assert res.json['message'] == 'access token invalid'
 
@@ -115,8 +116,6 @@ class TestLogout(test.TestCase):
         req, res = await app.asgi_client.get('/logout', headers={'Authorization': f'Bearer {access_token}'})
         assert res.status == 200
         assert res.json['message'] == 'logout successful'
-        user = await User.get(id=user.id)
-        assert user.refresh_token == ''
 
 
 class TestRefresh(test.TestCase):
@@ -134,7 +133,7 @@ class TestRefresh(test.TestCase):
         assert res.status == 200
         access = res.json['access']
         refresh = res.json['refresh']
-        assert refresh == old_refresh
+        assert refresh != old_refresh
         assert decode_payload(old_access).get('exp') < decode_payload(access).get('exp')
 
     async def test_wrong_refresh(self):
@@ -247,4 +246,5 @@ class TestRegister(test.TestCase):
         assert res.json['refresh']
         assert await check_verification_code(data['email'], code, 'register') is False
         req, res = await app.asgi_client.post('/login', json=data)
+        print(res.json)
         assert res.status == 200
