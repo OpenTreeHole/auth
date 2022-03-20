@@ -23,4 +23,6 @@ ENV SANIC_MODE="production"
 
 EXPOSE 8000
 
-ENTRYPOINT ["python", "app.py"]
+RUN chmod +x start.sh
+
+ENTRYPOINT ["start.sh"]
