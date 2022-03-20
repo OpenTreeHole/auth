@@ -2,7 +2,7 @@ from tortoise.contrib import test
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 import app
-from models import User
+from models.db import User
 
 print(app)
 

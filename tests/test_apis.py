@@ -5,17 +5,21 @@ import pytest
 from tortoise.contrib import test
 from tortoise.contrib.test import finalizer, initializer
 
-from app import app
-from models import User
-from settings import cache
+from settings import cache, get_sanic_app
+
+app = get_sanic_app()
+
+from models.db import User
 from utils.auth import many_hashes, totp, set_verification_code, check_verification_code
 from utils.jwt_utils import decode_payload
 
 
 @pytest.fixture(scope="session", autouse=True)
 def initialize_tests(request):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     db_url = os.environ.get("TORTOISE_TEST_DB", "sqlite://:memory:")
-    initializer(["models"], db_url=db_url, app_label="models")
+    initializer(['models.db'], db_url=db_url, app_label="models")
     request.addfinalizer(finalizer)
 
 

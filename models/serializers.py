@@ -4,7 +4,7 @@ from pydantic import BaseModel, validator, EmailStr
 from sanic import Sanic
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from models import User
+from models.db import User
 from utils.exceptions import ValidationError
 
 app = Sanic.get_app()
@@ -13,24 +13,6 @@ app = Sanic.get_app()
 # user = await UserSerializer.from_tortoise_orm(user)
 # return json(user.json(), dumps=lambda x: x)
 UserSerializer = pydantic_model_creator(User)
-
-
-class MessageResponse:
-    message: str
-
-
-class TokensResponse:
-    access: str
-    refresh: str
-
-
-class EmailVerifyResponse(MessageResponse):
-    scope: str
-
-
-class APIKeyVerifyResponse(MessageResponse):
-    code: str
-    scope: str
 
 
 class EmailModel(BaseModel):

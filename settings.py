@@ -33,7 +33,7 @@ app.ext.openapi.add_security_scheme(
 TORTOISE_ORM = {
     'apps': {
         'models': {
-            'models': ['models', 'aerich.models']
+            'models': ['models.db', 'aerich.models']
         }
     },
     'use_tz': True,

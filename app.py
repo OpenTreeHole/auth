@@ -5,16 +5,16 @@ from sanic.exceptions import Unauthorized, Forbidden
 from sanic_ext.extensions.openapi import openapi
 
 from settings import get_sanic_app
+
+app = get_sanic_app()
 from utils.common import authorized, send_email
 from utils.exceptions import BadRequest
 from utils.kong import delete_jwt_credentials
 from utils.validator import validate
 
-app = get_sanic_app()
-
-from models import User
-from serializers import LoginModel, EmailModel, ApikeyVerifyModel, RegisterModel, TokensResponse, MessageResponse, \
-    EmailVerifyResponse, APIKeyVerifyResponse
+from models.db import User
+from models.serializers import LoginModel, EmailModel, ApikeyVerifyModel, RegisterModel
+from models.response import MessageResponse, TokensResponse, EmailVerifyResponse, APIKeyVerifyResponse
 from utils.auth import many_hashes, check_password, set_verification_code, check_api_key, check_verification_code, \
     delete_verification_code, make_password
 from utils.jwt_utils import create_tokens

@@ -5,7 +5,7 @@ import jwt
 from jwt import DecodeError
 from sanic import Sanic
 
-from models import User
+from models.db import User
 from utils.kong import get_jwt_credential, JwtCredential
 
 app = Sanic.get_app()
