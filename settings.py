@@ -28,20 +28,20 @@ app.ext.openapi.add_security_scheme(
     scheme="bearer",
     bearer_format="JWT",
 )
+app.config.FALLBACK_ERROR_FORMAT = 'json'
 
 TORTOISE_ORM = {
     'apps': {
         'models': {
-            'models': ['models.db', 'aerich.models']
+            'models': ['models', 'aerich.models']
         }
+    },
+    'connections': {  # aerich 暂不支持 sqlite
+        'default': app.config.get('DB_URL', 'mysql://username:password@mysql:3306/auth')
     },
     'use_tz': True,
     'timezone': app.config.get('TZ', 'UTC')
 }
-# aerich 暂不支持 sqlite
-TORTOISE_ORM.update({'connections': {
-    'default': app.config.get('DB_URL', 'mysql://username:password@mysql:3306/auth')
-}})
 
 if MODE != 'production':
     logger.warning(f'server is running in {MODE} mode, do not use in production')

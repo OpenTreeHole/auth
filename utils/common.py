@@ -8,7 +8,7 @@ import aiosmtplib
 from sanic import Request, Sanic
 from sanic.exceptions import Unauthorized
 
-from models.db import User
+from models import User
 from utils.db import get_object_or_404
 from utils.jwt_utils import decode_payload
 

@@ -9,7 +9,7 @@ from settings import cache, get_sanic_app
 
 app = get_sanic_app()
 
-from models.db import User
+from models import User
 from utils.auth import many_hashes, totp, set_verification_code, check_verification_code
 from utils.jwt_utils import decode_payload
 
@@ -19,7 +19,7 @@ def initialize_tests(request):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     db_url = os.environ.get("TORTOISE_TEST_DB", "sqlite://:memory:")
-    initializer(['models.db'], db_url=db_url, app_label="models")
+    initializer(['models'], db_url=db_url, app_label="models")
     request.addfinalizer(finalizer)
 
 
@@ -181,6 +181,7 @@ class TestRegister(test.TestCase):
         }
         req, res = await app.asgi_client.get('/verify/apikey', params=params)
         assert res.status == 403
+        print(res.json)
         assert res.json['message'] == 'API Key 不正确'
 
         params['apikey'] = totp.now()
