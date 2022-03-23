@@ -21,6 +21,8 @@ aiosmtplib = "^1.1.6"
 pyotp = "^2.6.0"
 ujson = "^5.1.0"
 msgpack-python = "^0.5.6"
+python-dateutil = "^2.8.2"
+orjson = "^3.6.7"
 
 [tool.poetry.dev-dependencies]
 sanic-testing = "^0.8.2"

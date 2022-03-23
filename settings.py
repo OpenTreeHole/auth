@@ -1,7 +1,9 @@
 import json
 from json import JSONDecodeError
 
+import pytz
 from aiocache import Cache
+from pytz import UnknownTimeZoneError
 from sanic import Sanic
 from sanic.log import logger
 from tortoise import Tortoise
@@ -29,6 +31,10 @@ app.ext.openapi.add_security_scheme(
     bearer_format="JWT",
 )
 app.config.FALLBACK_ERROR_FORMAT = 'json'
+try:
+    app.config['TZ'] = pytz.timezone(app.config.get('TZ', 'UTC'))
+except UnknownTimeZoneError:
+    app.config['TZ'] = pytz.timezone('utc')
 
 TORTOISE_ORM = {
     'apps': {
@@ -40,7 +46,7 @@ TORTOISE_ORM = {
         'default': app.config.get('DB_URL', 'mysql://username:password@mysql:3306/auth')
     },
     'use_tz': True,
-    'timezone': app.config.get('TZ', 'UTC')
+    'timezone': str(app.config['TZ'])
 }
 
 if MODE != 'production':

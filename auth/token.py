@@ -16,13 +16,13 @@ app = Sanic.get_app()
 bp = Blueprint('token')
 
 
-@app.get('/login_required')
+@bp.get('/login_required')
 @authorized()
 async def login_required(request: Request):
     return json({'message': 'you are currently logged in', 'uid': request.ctx.user.id})
 
 
-@app.post('/login')
+@bp.post('/login')
 @openapi.description('用户名密码登录')
 @openapi.body(LoginModel.construct())
 @openapi.response(200, TokensResponse)
@@ -35,7 +35,7 @@ async def login(request: Request, body: LoginModel):
     return json({'access': access_token, 'refresh': refresh_token})
 
 
-@app.get('/logout')
+@bp.get('/logout')
 @openapi.description('单点退出，吊销 refresh token')
 @openapi.secured('token')
 @openapi.response(200, MessageResponse)
@@ -46,7 +46,7 @@ async def logout(request: Request):
     return json({'message': 'logout successful'})
 
 
-@app.post('/refresh')
+@bp.post('/refresh')
 @openapi.description('用 refresh token 刷新 access token 和 refresh token')
 @openapi.secured('token')
 @openapi.response(200, TokensResponse)

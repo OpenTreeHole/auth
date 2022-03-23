@@ -15,6 +15,9 @@ class User(Model):
     password = fields.CharField(max_length=128)
     joined_time = fields.DatetimeField(auto_now_add=True)
     nickname = fields.CharField(max_length=32, default='user')
+    is_admin = fields.BooleanField(default=False)
+    silent = fields.JSONField(default=dict)
+    offense_count = fields.IntField(default=0)
 
     def __str__(self):
         return f'User#{self.id}'
@@ -29,3 +32,21 @@ class User(Model):
         )
         await kong.create_user(user.id)
         return user
+
+    # def is_silenced(self, division_id):
+    #     now = datetime.now(app.config['TZ'])
+    #     division = str(division_id)  # JSON 序列化会将字典的 int 索引转换成 str
+    #     if not self.silenced.get(division):  # 未设置禁言，返回 False
+    #         return False
+    #     else:
+    #         expire_time = parser.isoparse(self.silenced.get(division))
+    #         return expire_time > now
+
+
+class Punishment(Model):
+    user = fields.ForeignKeyField('models.User', related_name='punishments')
+    reason = fields.CharField(max_length=100, default='')
+    scope = fields.CharField(max_length=32, default='default')
+    start_time = fields.DatetimeField(auto_now_add=True)
+    end_time = fields.DatetimeField(auto_now_add=True)
+    made_by = fields.ForeignKeyField('models.User', related_name='made_punishments')

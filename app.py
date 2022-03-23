@@ -8,8 +8,9 @@ print(app)
 
 from auth.account import bp as account
 from auth.token import bp as token
+from admin.api import bp as admin
 
-app.blueprint([token, account])
+app.blueprint([token, account, admin])
 
 
 @app.middleware('request')

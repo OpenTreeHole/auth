@@ -79,5 +79,4 @@ async def connect_to_gateway():
         else:
             logger.info('gateway connected')
 
-
-asyncio.run(connect_to_gateway())
+# asyncio.run(connect_to_gateway())

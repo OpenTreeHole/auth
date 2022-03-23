@@ -1,0 +1,29 @@
+-- upgrade --
+CREATE TABLE IF NOT EXISTS `user` (
+    `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    `email` VARCHAR(1000) NOT NULL,
+    `identifier` VARCHAR(128) NOT NULL UNIQUE,
+    `password` VARCHAR(128) NOT NULL,
+    `joined_time` DATETIME(6) NOT NULL  DEFAULT CURRENT_TIMESTAMP(6),
+    `nickname` VARCHAR(32) NOT NULL  DEFAULT 'user',
+    `is_admin` BOOL NOT NULL  DEFAULT 0,
+    `silent` JSON NOT NULL,
+    `offense_count` INT NOT NULL  DEFAULT 0
+) CHARACTER SET utf8mb4;
+CREATE TABLE IF NOT EXISTS `punishment` (
+    `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    `reason` VARCHAR(100) NOT NULL  DEFAULT '',
+    `scope` VARCHAR(32) NOT NULL  DEFAULT 'default',
+    `start_time` DATETIME(6) NOT NULL  DEFAULT CURRENT_TIMESTAMP(6),
+    `end_time` DATETIME(6) NOT NULL  DEFAULT CURRENT_TIMESTAMP(6),
+    `made_by_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    CONSTRAINT `fk_punishme_user_19526fb8` FOREIGN KEY (`made_by_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_punishme_user_49f23b43` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) CHARACTER SET utf8mb4;
+CREATE TABLE IF NOT EXISTS `aerich` (
+    `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    `version` VARCHAR(255) NOT NULL,
+    `app` VARCHAR(20) NOT NULL,
+    `content` JSON NOT NULL
+) CHARACTER SET utf8mb4;
