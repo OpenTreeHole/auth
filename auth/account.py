@@ -49,6 +49,37 @@ async def verify_with_email(request: Request, match: EmailModel, **kwargs):
     })
 
 
+@bp.get('/verify/email')
+@openapi.description('邮箱验证\n用户不存在，注册邮件；用户存在，重置密码')
+@openapi.response(200, EmailVerifyResponse)
+@validate(query=EmailModel)
+async def verify_with_email(request: Request, query: EmailModel, **kwargs):
+    user_exists = await User.filter(identifier=many_hashes(query.email)).exists()
+    scope = 'reset' if user_exists else 'register'
+    code = await set_verification_code(email=query.email, scope=scope)
+    base_content = (
+        f'您的验证码是: {code}\r\n'
+        f'验证码的有效期为 {app.config["VERIFICATION_CODE_EXPIRES"]} 分钟\r\n'
+        '如果您意外地收到了此邮件，请忽略它'
+    )
+    if scope == 'register':
+        await send_email(
+            subject=f'{app.config["SITE_NAME"]} 注册验证',
+            content=f'欢迎注册 {app.config["SITE_NAME"]}，{base_content}',
+            receivers=query.email
+        )
+    else:
+        await send_email(
+            subject=f'{app.config["SITE_NAME"]} 重置密码',
+            content=f'您正在重置密码，{base_content}',
+            receivers=query.email
+        )
+    return json({
+        'message': '验证邮件已发送，请查收\n如未收到，请检查邮件地址是否正确，检查垃圾箱，或重试',
+        'scope': scope
+    })
+
+
 @bp.get('/verify/apikey')
 @openapi.description('APIKey验证\n只能注册用')
 @openapi.parameter('email', str)
