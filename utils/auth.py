@@ -7,8 +7,6 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from sanic import Sanic
 
-from settings import cache
-
 app = Sanic.get_app()
 
 
@@ -85,7 +83,7 @@ async def set_verification_code(email: str, scope='register') -> str:
     缓存中设置验证码，key = {scope}-{many_hashes(email)}
     """
     code = str(secrets.randbelow(1000000)).zfill(6)
-    await cache.set(
+    await app.ctx.cache.set(
         key=f'{scope}-{many_hashes(email)}',
         value=code,
         ttl=app.config['VERIFICATION_CODE_EXPIRES'] * 60
@@ -97,7 +95,7 @@ async def check_verification_code(email: str, code: str, scope='register') -> bo
     """
     检查验证码
     """
-    stored_code = await cache.get(f'{scope}-{many_hashes(email)}')
+    stored_code = await app.ctx.cache.get(f'{scope}-{many_hashes(email)}')
     return code == stored_code
 
 

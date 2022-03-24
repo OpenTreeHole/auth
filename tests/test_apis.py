@@ -5,7 +5,7 @@ import pytest
 from tortoise.contrib import test
 from tortoise.contrib.test import finalizer, initializer
 
-from settings import cache, get_sanic_app
+from settings import get_sanic_app
 
 app = get_sanic_app()
 
@@ -158,7 +158,7 @@ class TestRegister(test.TestCase):
         assert res.status == 200
         assert res.json['message']
         assert res.json['scope'] == 'register'
-        code = await cache.get(f'register-{many_hashes(email)}')
+        code = await app.ctx.cache.get(f'register-{many_hashes(email)}')
         assert len(code) == 6
         assert isinstance(code, str)
 
@@ -167,7 +167,7 @@ class TestRegister(test.TestCase):
         assert res.status == 200
         assert res.json['message']
         assert res.json['scope'] == 'reset'
-        assert await cache.get(f'reset-{many_hashes(email)}')
+        assert await app.ctx.cache.get(f'reset-{many_hashes(email)}')
 
     async def test_verify_with_apikey(self):
         params = {
@@ -189,7 +189,7 @@ class TestRegister(test.TestCase):
         assert res.status == 200
         assert res.json['message'] == '验证成功'
         assert res.json['scope'] == 'register'
-        assert res.json['code'] == await cache.get(f'register-{many_hashes(params["email"])}')
+        assert res.json['code'] == await app.ctx.cache.get(f'register-{many_hashes(params["email"])}')
 
         params['check_register'] = True
         req, res = await app.asgi_client.get('/verify/apikey', params=params)

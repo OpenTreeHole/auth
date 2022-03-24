@@ -25,6 +25,18 @@ def timer(func):
     return wrapper
 
 
+async def _authorize(request: Request, token_type) -> User:
+    if app.config['DEBUG']:
+        user = await User.get_or_none(id=1)
+        if not user:
+            user = await User.create_user(email='', password='')
+        return user
+    payload = decode_payload(request.ctx.token)
+    if not payload or payload.get('type') != token_type and not app.config['DEBUG']:
+        raise Unauthorized(f'{token_type} token invalid', scheme='Bearer')
+    return await get_object_or_404(User, id=payload.get('uid'))
+
+
 def authorized(token_type='access'):
     """
     位于 API 网关之后，认为 token 已校验，仅检查 token type
@@ -33,10 +45,7 @@ def authorized(token_type='access'):
     def decorator(f):
         @wraps(f)
         async def decorated_function(request: Request, *args, **kwargs):
-            payload = decode_payload(request.ctx.token)
-            if not payload or payload.get('type') != token_type:
-                raise Unauthorized(f'{token_type} token invalid', scheme='Bearer')
-            request.ctx.user = await get_object_or_404(User, id=payload.get('uid'))
+            request.ctx.user = await _authorize(request, token_type)
             response = f(request, *args, **kwargs)
             if isawaitable(response):
                 response = await response

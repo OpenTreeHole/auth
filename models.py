@@ -18,9 +18,17 @@ class User(Model):
     is_admin = fields.BooleanField(default=False)
     silent = fields.JSONField(default=dict)
     offense_count = fields.IntField(default=0)
+    punishments: fields.ReverseRelation['Punishment']
+    punishments_made: fields.ReverseRelation['Punishment']
 
     def __str__(self):
         return f'User#{self.id}'
+
+    class PydanticMeta:
+        # include = ['id', 'joined_time', 'nickname', 'is_admin', 'silent', 'offense_count']
+        include = ['id']
+        allow_cycles = False
+        max_recursion = 1
 
     @classmethod
     async def create_user(cls, email: str, password: str, **kwargs) -> 'User':
@@ -44,9 +52,14 @@ class User(Model):
 
 
 class Punishment(Model):
-    user = fields.ForeignKeyField('models.User', related_name='punishments')
+    user: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='punishments')
+    made_by: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='punishments_made')
     reason = fields.CharField(max_length=100, default='')
     scope = fields.CharField(max_length=32, default='default')
     start_time = fields.DatetimeField(auto_now_add=True)
     end_time = fields.DatetimeField(auto_now_add=True)
-    made_by = fields.ForeignKeyField('models.User', related_name='made_punishments')
+
+    class PydanticMeta:
+        exclude = []
+        allow_cycles = False
+        max_recursion = 1

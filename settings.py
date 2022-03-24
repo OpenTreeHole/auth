@@ -9,8 +9,8 @@ from sanic.log import logger
 from tortoise import Tortoise
 
 
-# 环境变量可以解析 int，bool，无法解析数组
 def parse_array(s: str) -> list:
+    # 环境变量可以解析 int，bool，无法解析数组
     try:
         return json.loads(s)
     except JSONDecodeError:
@@ -35,7 +35,7 @@ try:
     app.config['TZ'] = pytz.timezone(app.config.get('TZ', 'UTC'))
 except UnknownTimeZoneError:
     app.config['TZ'] = pytz.timezone('utc')
-
+app.ctx.cache = Cache()
 TORTOISE_ORM = {
     'apps': {
         'models': {
@@ -54,6 +54,10 @@ if MODE != 'production':
 if not app.config['EMAIL_WHITELIST']:
     logger.warning(f'email whitelist not set')
 
+import models
+
+Tortoise.init_models([models], 'models')
+
 
 @app.signal('server.init.after')
 async def init(*args, **kwargs):
@@ -65,9 +69,6 @@ async def init(*args, **kwargs):
 async def close(*args, **kwargs):
     if MODE != 'test':
         await Tortoise.close_connections()
-
-
-cache = Cache()
 
 
 def get_sanic_app() -> Sanic:

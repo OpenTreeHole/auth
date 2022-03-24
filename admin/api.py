@@ -2,10 +2,12 @@ from datetime import timedelta
 
 from dateutil.parser import isoparse
 from sanic import Blueprint, Request
+from sanic.exceptions import Forbidden
 from sanic_ext.extensions.openapi import openapi
 
-from admin.serializers import PunishmentAdd, PunishT
+from admin.serializers import PunishmentAdd, PunishmentModel
 from models import User, Punishment
+from utils.common import authorized
 from utils.db import get_object_or_404
 from utils.sanic_patch import json
 from utils.validator import validate
@@ -15,8 +17,9 @@ bp = Blueprint('admin')
 
 
 @bp.post('/users/<user_id:int>/punishments')
-@openapi.response(200, PunishT.construct())
+@openapi.response(200, PunishmentModel.construct())
 @openapi.body(PunishmentAdd)
+@authorized()
 @validate(json=PunishmentAdd)
 async def add_punishment(request: Request, user_id: int, body: PunishmentAdd):
     user = await get_object_or_404(User, id=user_id)
@@ -37,4 +40,14 @@ async def add_punishment(request: Request, user_id: int, body: PunishmentAdd):
         )
     user.offense_count += 1
     await user.save()
-    return json(PunishT.from_tortoise_orm(punishment).dict())
+    return json((await PunishmentModel.from_tortoise_orm(punishment)).dict())
+
+
+@bp.get('/users/<user_id:int>/punishments/<id:int>')
+@openapi.response(200, PunishmentModel.construct())
+@authorized()
+async def get_punishment_by_user(request: Request, user_id: int, id: int):
+    if not request.ctx.user.id == user_id and not request.ctx.user.is_admin:
+        raise Forbidden()
+    punishment = await get_object_or_404(Punishment, id=id)
+    return json((await PunishmentModel.from_tortoise_orm(punishment)).dict())
