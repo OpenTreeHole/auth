@@ -7,9 +7,9 @@ from auth.serializers import LoginModel
 from models import User
 from utils.auth import many_hashes, check_password
 from utils.common import authorized
-from utils.db import get_object_or_404
 from utils.jwt_utils import create_tokens
 from utils.kong import delete_jwt_credentials
+from utils.orm import get_object_or_404
 from utils.validator import validate
 
 app = Sanic.get_app()

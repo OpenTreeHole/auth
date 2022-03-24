@@ -9,8 +9,8 @@ from sanic import Request, Sanic
 from sanic.exceptions import Unauthorized
 
 from models import User
-from utils.db import get_object_or_404
 from utils.jwt_utils import decode_payload
+from utils.orm import get_object_or_404
 
 app = Sanic.get_app()
 

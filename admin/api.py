@@ -5,10 +5,10 @@ from sanic import Blueprint, Request
 from sanic.exceptions import Forbidden
 from sanic_ext.extensions.openapi import openapi
 
-from admin.serializers import PunishmentAdd, PunishmentModel
+from admin.serializers import PunishmentAdd, PunishmentModel, PunishmentList
 from models import User, Punishment
 from utils.common import authorized
-from utils.db import get_object_or_404
+from utils.orm import get_object_or_404, serialize
 from utils.sanic_patch import json
 from utils.validator import validate
 from utils.values import now
@@ -43,6 +43,16 @@ async def add_punishment(request: Request, user_id: int, body: PunishmentAdd):
     return json((await PunishmentModel.from_tortoise_orm(punishment)).dict())
 
 
+@bp.get('/users/<user_id:int>/punishments')
+@openapi.response(200, PunishmentList.construct())
+@authorized()
+async def list_punishments_by_user(request: Request, user_id: int):
+    if not request.ctx.user.id == user_id and not request.ctx.user.is_admin:
+        raise Forbidden()
+    punishments = Punishment.all()
+    return json(await serialize(punishments, PunishmentList))
+
+
 @bp.get('/users/<user_id:int>/punishments/<id:int>')
 @openapi.response(200, PunishmentModel.construct())
 @authorized()
@@ -50,4 +60,4 @@ async def get_punishment_by_user(request: Request, user_id: int, id: int):
     if not request.ctx.user.id == user_id and not request.ctx.user.is_admin:
         raise Forbidden()
     punishment = await get_object_or_404(Punishment, id=id)
-    return json((await PunishmentModel.from_tortoise_orm(punishment)).dict())
+    return json(await serialize(punishment, PunishmentModel))

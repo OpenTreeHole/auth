@@ -8,10 +8,10 @@ from models import User
 from utils.auth import many_hashes, set_verification_code, check_api_key, check_verification_code, \
     delete_verification_code, make_password
 from utils.common import send_email
-from utils.db import get_object_or_404
 from utils.exceptions import BadRequest
 from utils.jwt_utils import create_tokens
 from utils.kong import delete_jwt_credentials
+from utils.orm import get_object_or_404
 from utils.validator import validate
 
 app = Sanic.get_app()
