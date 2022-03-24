@@ -5,7 +5,7 @@ from sanic import Blueprint, Request
 from sanic.exceptions import Forbidden
 from sanic_ext.extensions.openapi import openapi
 
-from admin.serializers import PunishmentAdd, PunishmentModel, PunishmentList
+from admin.serializers import PunishmentAdd, PunishmentModel, PunishmentList, PageModel
 from models import User, Punishment
 from utils.common import authorized
 from utils.orm import get_object_or_404, serialize
@@ -13,7 +13,7 @@ from utils.sanic_patch import json
 from utils.validator import validate
 from utils.values import now
 
-bp = Blueprint('admin')
+bp = Blueprint('punishment')
 
 
 @bp.post('/users/<user_id:int>/punishments')
@@ -49,7 +49,7 @@ async def add_punishment(request: Request, user_id: int, body: PunishmentAdd):
 async def list_punishments_by_user(request: Request, user_id: int):
     if not request.ctx.user.id == user_id and not request.ctx.user.is_admin:
         raise Forbidden()
-    punishments = Punishment.all()
+    punishments = Punishment.filter(user_id=user_id)
     return json(await serialize(punishments, PunishmentList))
 
 
@@ -61,3 +61,26 @@ async def get_punishment_by_user(request: Request, user_id: int, id: int):
         raise Forbidden()
     punishment = await get_object_or_404(Punishment, id=id)
     return json(await serialize(punishment, PunishmentModel))
+
+
+@bp.get('/punishments/<id:int>')
+@openapi.response(200, PunishmentModel.construct())
+@authorized()
+async def get_punishment_by_id(request: Request, id: int):
+    if not request.ctx.user.is_admin:
+        raise Forbidden()
+    punishment = await get_object_or_404(Punishment, id=id)
+    return json(await serialize(punishment, PunishmentModel))
+
+
+@bp.get('/punishments')
+@openapi.parameter('size', int)
+@openapi.parameter('offset', int)
+@openapi.response(200, PunishmentModel.construct())
+@validate(query=PageModel)
+@authorized()
+async def get_punishment_by_id(request: Request, query: PageModel):
+    if not request.ctx.user.is_admin:
+        raise Forbidden()
+    punishments = Punishment.all().offset(query.offset).limit(query.size)
+    return json(await serialize(punishments, PunishmentList))
