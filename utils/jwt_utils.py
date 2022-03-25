@@ -54,6 +54,10 @@ async def create_tokens(user: User) -> Tuple[str, str]:
     payload = {
         'uid': user.id,
         'iss': credential.key,
-        'iat': datetime.now(tz=timezone.utc)
+        'iat': datetime.now(tz=timezone.utc),
+        'nickname': user.nickname,
+        'is_admin': user.is_admin,
+        'silent': user.silent,
+        'offense_count': user.offense_count
     }
     return create_access_token(payload, credential), await create_refresh_token(payload, credential)
