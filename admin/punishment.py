@@ -3,10 +3,10 @@ from datetime import timedelta
 from dateutil.parser import isoparse
 from sanic import Blueprint, Request
 from sanic.exceptions import Forbidden
-from sanic_ext.extensions.openapi import openapi
 
 from admin.serializers import PunishmentAdd, PunishmentModel, PunishmentList, PageModel
 from models import User, Punishment
+from utils import myopenapi
 from utils.common import authorized
 from utils.orm import get_object_or_404, serialize
 from utils.sanic_patch import json
@@ -17,8 +17,8 @@ bp = Blueprint('punishment')
 
 
 @bp.post('/users/<user_id:int>/punishments')
-@openapi.response(200, PunishmentModel.construct())
-@openapi.body(PunishmentAdd)
+@myopenapi.response(200, PunishmentModel.construct())
+@myopenapi.body(PunishmentAdd)
 @authorized()
 @validate(json=PunishmentAdd)
 async def add_punishment(request: Request, user_id: int, body: PunishmentAdd):
@@ -44,7 +44,7 @@ async def add_punishment(request: Request, user_id: int, body: PunishmentAdd):
 
 
 @bp.get('/users/<user_id:int>/punishments')
-@openapi.response(200, PunishmentList.construct())
+@myopenapi.response(200, PunishmentList.construct())
 @authorized()
 async def list_punishments_by_user(request: Request, user_id: int):
     if not request.ctx.user.id == user_id and not request.ctx.user.is_admin:
@@ -54,7 +54,7 @@ async def list_punishments_by_user(request: Request, user_id: int):
 
 
 @bp.get('/users/<user_id:int>/punishments/<id:int>')
-@openapi.response(200, PunishmentModel.construct())
+@myopenapi.response(200, PunishmentModel.construct())
 @authorized()
 async def get_punishment_by_user(request: Request, user_id: int, id: int):
     if not request.ctx.user.id == user_id and not request.ctx.user.is_admin:
@@ -64,7 +64,7 @@ async def get_punishment_by_user(request: Request, user_id: int, id: int):
 
 
 @bp.get('/punishments/<id:int>')
-@openapi.response(200, PunishmentModel.construct())
+@myopenapi.response(200, PunishmentModel.construct())
 @authorized()
 async def get_punishment_by_id(request: Request, id: int):
     if not request.ctx.user.is_admin:
@@ -74,9 +74,8 @@ async def get_punishment_by_id(request: Request, id: int):
 
 
 @bp.get('/punishments')
-@openapi.parameter('size', int)
-@openapi.parameter('offset', int)
-@openapi.response(200, PunishmentModel.construct())
+@myopenapi.response(200, PunishmentModel.construct())
+@myopenapi.query(PageModel)
 @validate(query=PageModel)
 @authorized()
 async def list_punishments(request: Request, query: PageModel):

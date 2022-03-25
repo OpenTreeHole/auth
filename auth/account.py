@@ -5,6 +5,7 @@ from sanic_ext.extensions.openapi import openapi
 from auth.response import EmailVerifyResponse, APIKeyVerifyResponse, TokensResponse
 from auth.serializers import EmailModel, ApikeyVerifyModel, RegisterModel
 from models import User
+from utils import myopenapi
 from utils.auth import many_hashes, set_verification_code, check_api_key, check_verification_code, \
     delete_verification_code, make_password
 from utils.common import send_email
@@ -20,7 +21,7 @@ bp = Blueprint('account')
 
 @bp.get('/verify/email/<email:str>')
 @openapi.description('邮箱验证\n用户不存在，注册邮件；用户存在，重置密码')
-@openapi.response(200, EmailVerifyResponse)
+@myopenapi.response(200, EmailVerifyResponse)
 @validate(match=EmailModel)
 async def verify_with_email(request: Request, match: EmailModel, **kwargs):
     user_exists = await User.filter(identifier=many_hashes(match.email)).exists()
@@ -51,7 +52,7 @@ async def verify_with_email(request: Request, match: EmailModel, **kwargs):
 
 @bp.get('/verify/email')
 @openapi.description('邮箱验证\n用户不存在，注册邮件；用户存在，重置密码')
-@openapi.response(200, EmailVerifyResponse)
+@myopenapi.response(200, EmailVerifyResponse)
 @validate(query=EmailModel)
 async def verify_with_email(request: Request, query: EmailModel, **kwargs):
     user_exists = await User.filter(identifier=many_hashes(query.email)).exists()
@@ -82,9 +83,8 @@ async def verify_with_email(request: Request, query: EmailModel, **kwargs):
 
 @bp.get('/verify/apikey')
 @openapi.description('APIKey验证\n只能注册用')
-@openapi.parameter('email', str)
-@openapi.parameter('apikey', str)
-@openapi.response(200, APIKeyVerifyResponse)
+@myopenapi.query(ApikeyVerifyModel)
+@myopenapi.response(200, APIKeyVerifyResponse)
 @validate(query=ApikeyVerifyModel)
 async def verify_with_apikey(request: Request, query: ApikeyVerifyModel):
     scope = 'register'
@@ -101,8 +101,8 @@ async def verify_with_apikey(request: Request, query: ApikeyVerifyModel):
 
 @bp.post('/register')
 @openapi.description('用户注册')
-@openapi.body(RegisterModel)
-@openapi.response(200, TokensResponse)
+@myopenapi.body(RegisterModel)
+@myopenapi.response(200, TokensResponse)
 @validate(json=RegisterModel)
 async def register(request: Request, body: RegisterModel):
     if not await check_verification_code(body.email, body.verification, 'register'):
@@ -117,8 +117,8 @@ async def register(request: Request, body: RegisterModel):
 
 @bp.put('/register')
 @openapi.description('修改密码')
-@openapi.body(RegisterModel)
-@openapi.response(200, TokensResponse)
+@myopenapi.body(RegisterModel)
+@myopenapi.response(200, TokensResponse)
 @validate(json=RegisterModel)
 async def change_password(request: Request, body: RegisterModel):
     """

@@ -5,6 +5,7 @@ from sanic_ext.extensions.openapi import openapi
 from auth.response import TokensResponse, MessageResponse
 from auth.serializers import LoginModel
 from models import User
+from utils import myopenapi
 from utils.auth import many_hashes, check_password
 from utils.common import authorized
 from utils.jwt_utils import create_tokens
@@ -24,8 +25,8 @@ async def login_required(request: Request):
 
 @bp.post('/login')
 @openapi.description('用户名密码登录')
-@openapi.body(LoginModel.construct())
-@openapi.response(200, TokensResponse)
+@myopenapi.body(LoginModel.construct())
+@myopenapi.response(200, TokensResponse)
 @validate(json=LoginModel)
 async def login(request: Request, body: LoginModel):
     user = await get_object_or_404(User, identifier=many_hashes(body.email))
@@ -38,7 +39,7 @@ async def login(request: Request, body: LoginModel):
 @bp.get('/logout')
 @openapi.description('单点退出，吊销 refresh token')
 @openapi.secured('token')
-@openapi.response(200, MessageResponse)
+@myopenapi.response(200, MessageResponse)
 @authorized()
 async def logout(request: Request):
     user: User = request.ctx.user
@@ -49,7 +50,7 @@ async def logout(request: Request):
 @bp.post('/refresh')
 @openapi.description('用 refresh token 刷新 access token 和 refresh token')
 @openapi.secured('token')
-@openapi.response(200, TokensResponse)
+@myopenapi.response(200, TokensResponse)
 @authorized(token_type='refresh')
 async def refresh(request: Request):
     user: User = request.ctx.user

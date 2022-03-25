@@ -9,8 +9,9 @@ print(app)
 from auth.account import bp as account
 from auth.token import bp as token
 from admin.punishment import bp as punishment
+from admin.user import bp as user
 
-app.blueprint([token, account, punishment])
+app.blueprint([token, account, punishment, user])
 
 
 @app.middleware('request')
