@@ -79,7 +79,7 @@ async def get_punishment_by_id(request: Request, id: int):
 @openapi.response(200, PunishmentModel.construct())
 @validate(query=PageModel)
 @authorized()
-async def get_punishment_by_id(request: Request, query: PageModel):
+async def list_punishments(request: Request, query: PageModel):
     if not request.ctx.user.is_admin:
         raise Forbidden()
     punishments = Punishment.all().offset(query.offset).limit(query.size)
