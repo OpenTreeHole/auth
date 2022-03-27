@@ -22,7 +22,7 @@ msgpack-python = "^0.5.6"
 python-dateutil = "^2.8.2"
 orjson = "^3.6.7"
 fastapi = { extras = ["all"], version = "^0.75.0" }
-httpx = {extras = ["http2"], version = "^0.22.0"}
+httpx = { extras = ["http2"], version = "^0.22.0" }
 
 
 [tool.poetry.dev-dependencies]
@@ -32,7 +32,7 @@ pytest-ordering = "^0.6"
 
 
 [tool.aerich]
-tortoise_orm = "settings.TORTOISE_ORM"
+tortoise_orm = "config.TORTOISE_ORM"
 location = "./migrations"
 src_folder = "./."
 [build-system]

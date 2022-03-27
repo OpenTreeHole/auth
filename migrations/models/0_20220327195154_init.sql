@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS `user` (
     `email` VARCHAR(1000) NOT NULL,
     `identifier` VARCHAR(128) NOT NULL UNIQUE,
     `password` VARCHAR(128) NOT NULL,
+    `is_admin` BOOL NOT NULL  DEFAULT 0,
     `joined_time` DATETIME(6) NOT NULL  DEFAULT CURRENT_TIMESTAMP(6),
     `nickname` VARCHAR(32) NOT NULL  DEFAULT 'user',
-    `is_admin` BOOL NOT NULL  DEFAULT 0,
     `silent` JSON NOT NULL,
     `offense_count` INT NOT NULL  DEFAULT 0
 ) CHARACTER SET utf8mb4;

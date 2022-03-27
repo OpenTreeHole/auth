@@ -1,8 +1,14 @@
 from tortoise import fields
+from tortoise.manager import Manager
 from tortoise.models import Model
 
 from utils import kong
 from utils.auth import rsa_encrypt, many_hashes, make_password
+
+
+class IsActiveManager(Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_active=True)
 
 
 class User(Model):
@@ -10,16 +16,21 @@ class User(Model):
     email = fields.CharField(max_length=1000)  # RSA encrypted email
     identifier = fields.CharField(max_length=128, unique=True)  # sha3-512 of email
     password = fields.CharField(max_length=128)
+    is_active = fields.BooleanField(default=True)
+    is_admin = fields.BooleanField(default=False)
     joined_time = fields.DatetimeField(auto_now_add=True)
     nickname = fields.CharField(max_length=32, default='user')
-    is_admin = fields.BooleanField(default=False)
     silent = fields.JSONField(default=dict)
     offense_count = fields.IntField(default=0)
     punishments: fields.ReverseRelation['Punishment']
     punishments_made: fields.ReverseRelation['Punishment']
+    all_objects = Manager()
 
     def __str__(self):
         return f'User#{self.id}'
+
+    class Meta:
+        manager = IsActiveManager()
 
     class PydanticMeta:
         # include = ['id', 'joined_time', 'nickname', 'is_admin', 'silent', 'offense_count']

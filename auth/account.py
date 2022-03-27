@@ -95,9 +95,16 @@ async def verify_with_apikey(query: ApikeyVerifyModel = Depends()):
 async def register(body: RegisterModel):
     if not await check_verification_code(body.email, body.verification, 'register'):
         raise BadRequest('验证码错误')
-    if await User.filter(identifier=many_hashes(body.email)).exists():
-        raise BadRequest('该用户已注册，如果忘记密码，请使用忘记密码功能找回')
-    user = await User.create_user(email=body.email, password=body.password)
+    user = await User.all_objects.filter(identifier=many_hashes(body.email)).first()
+    if user:
+        if user.is_active:
+            raise BadRequest('该用户已注册，如果忘记密码，请使用忘记密码功能找回')
+        else:  # 可能为已删除的用户
+            user.is_active = True
+            user.password = make_password(body.password)
+            await user.save()
+    else:
+        user = await User.create_user(email=body.email, password=body.password)
     access_token, refresh_token = await create_tokens(user)
     await delete_verification_code(body.email, 'register')
     return {'access': access_token, 'refresh': refresh_token, 'message': 'register successful'}

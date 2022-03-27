@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, validator, EmailStr
+from pydantic import BaseModel, validator, EmailStr, Field
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from config import config
@@ -22,17 +22,19 @@ class EmailModel(BaseModel):
         return email
 
 
-class LoginModel(EmailModel):
+class PasswordModel(BaseModel):
+    password: str = Field(min_length=8)
+
+    # @validator('password')
+    # def password_too_weak(cls, password):
+    #     return password
+
+
+class LoginModel(EmailModel, PasswordModel):
+    pass
     """
     email, password
     """
-    password: str
-
-    @validator('password')
-    def password_too_weak(cls, password):
-        if len(password) < 8:
-            raise ValidationError('password too weak')
-        return password
 
 
 class ApikeyVerifyModel(EmailModel):

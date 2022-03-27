@@ -48,7 +48,6 @@ class Settings(BaseSettings):
 
 
 config = Settings(tz=parse_tz())
-print(config.tz)
 if config.mode != 'production':
     print(f'server is running in {config.mode} mode, do not use in production')
 if not config.email_whitelist:
