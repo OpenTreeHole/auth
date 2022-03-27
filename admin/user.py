@@ -1,41 +1,33 @@
-from sanic import Blueprint, Request
-from sanic.exceptions import Forbidden
+from typing import List
+
+from fastapi import APIRouter
+from fastapi.params import Depends
 
 from admin.serializers import UserModel, PageModel, UserList
 from models import User
-from utils import myopenapi
-from utils.common import authorized
+from utils.common import get_user
+from utils.exceptions import Forbidden
 from utils.orm import get_object_or_404, serialize
-from utils.sanic_patch import json
-from utils.validator import validate
 
-bp = Blueprint('user')
+router = APIRouter(tags=['user'])
 
 
-@bp.get('/users/me')
-@myopenapi.response(200, UserModel.construct())
-@authorized()
-async def get_current_user(request: Request):
-    return json(await serialize(request.ctx.user, UserModel))
+@router.get('/users/me', response_model=UserModel)
+async def get_current_user(user: User = Depends(get_user)):
+    return await serialize(user, UserModel)
 
 
-@bp.get('/users/<user_id:int>')
-@myopenapi.response(200, UserModel.construct())
-@authorized()
-async def get_user_by_id(request: Request, user_id: int):
-    if not request.ctx.user.id == user_id and not request.ctx.user.is_admin:
+@router.get('/users/{user_id}', response_model=UserModel)
+async def get_user_by_id(user_id: int, user: User = Depends(get_user)):
+    if not user.id == user_id and not user.is_admin:
         raise Forbidden()
     user = await get_object_or_404(User, id=user_id)
-    return json(await serialize(user, UserModel))
+    return await serialize(user, UserModel)
 
 
-@bp.get('/users')
-@myopenapi.response(200, [UserModel.construct()])
-@myopenapi.query(PageModel)
-@validate(query=PageModel)
-@authorized()
-async def list_users(request: Request, query: PageModel):
-    if not request.ctx.user.is_admin:
+@router.get('/users', response_model=List[UserModel])
+async def list_users(query: PageModel = Depends(), user: User = Depends(get_user)):
+    if not user.is_admin:
         raise Forbidden()
     users = User.all().offset(query.offset).limit(query.size)
-    return json(await serialize(users, UserList))
+    return await serialize(users, UserList)

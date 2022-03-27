@@ -2,9 +2,9 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from config import config
 from models import Punishment, User
 from utils.orm import models_creator
-from utils.values import DEFAULT_SIZE
 
 PunishmentModel, PunishmentList = models_creator(Punishment)
 UserModel, UserList = models_creator(
@@ -20,5 +20,5 @@ class PunishmentAdd(BaseModel):
 
 
 class PageModel(BaseModel):
-    size: Optional[int] = DEFAULT_SIZE
+    size: Optional[int] = config.default_size
     offset: Optional[int] = 0

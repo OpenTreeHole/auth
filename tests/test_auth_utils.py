@@ -1,4 +1,4 @@
-from app import app
+from main import app
 from utils.auth import rsa_encrypt, rsa_decrypt, make_password, check_password, many_hashes
 
 print(app)

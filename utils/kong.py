@@ -3,23 +3,20 @@ from typing import List
 
 import httpx
 from pydantic import BaseModel
-from sanic import Sanic
-from sanic.exceptions import ServerError
-from sanic.log import logger
 
-app = Sanic.get_app()
-KONG_URL = app.config.get('KONG_URL', 'http://kong:8001')
-KONG_TOKEN = app.config.get('KONG_TOKEN', '')
+from config import config
+from utils.exceptions import ServerError
+
 headers = {
-    'Authorization': KONG_TOKEN
-} if KONG_TOKEN else {}
+    'Authorization': config.kong_token
+} if config.kong_token else {}
 
 
 async def create_user(id: int) -> dict:
-    async with httpx.AsyncClient(base_url=KONG_URL, headers=headers) as c:
+    async with httpx.AsyncClient(base_url=config.kong_url, headers=headers) as c:
         r = await c.put(f'/consumers/{id}')
         if not r.status_code == 200:
-            raise ServerError(r.json().get('message'), extra=r.json())
+            raise ServerError(r.json().get('message'))
         return r.json()
 
 
@@ -31,18 +28,18 @@ class JwtCredential(BaseModel):
 
 
 async def create_jwt_credential(id: int) -> JwtCredential:
-    async with httpx.AsyncClient(base_url=KONG_URL, headers=headers) as c:
+    async with httpx.AsyncClient(base_url=config.kong_url, headers=headers) as c:
         r = await c.post(f'/consumers/{id}/jwt')
         if not r.status_code == 201:
-            raise ServerError(r.json().get('message'), extra=r.json())
+            raise ServerError(r.json().get('message'))
         return JwtCredential(**r.json())
 
 
 async def list_jwt_credentials(id: int) -> List[dict]:
-    async with httpx.AsyncClient(base_url=KONG_URL, headers=headers) as c:
+    async with httpx.AsyncClient(base_url=config.kong_url, headers=headers) as c:
         r = await c.get(f'/consumers/{id}/jwt')
         if not r.status_code == 200:
-            raise ServerError(r.json().get('message'), extra=r.json())
+            raise ServerError(r.json().get('message'))
         data = r.json().get('data', [])
         return data
 
@@ -61,7 +58,7 @@ async def delete_jwt_credentials(id: int) -> int:
     data = await list_jwt_credentials(id)
     num = 0
     tasks = []
-    async with httpx.AsyncClient(base_url=KONG_URL, headers=headers) as c:
+    async with httpx.AsyncClient(base_url=config.kong_url, headers=headers) as c:
         for i in data:
             tasks.append(c.delete(f'/consumers/{id}/jwt/{i["id"]}'))
         results = await asyncio.gather(*tasks)
@@ -72,11 +69,11 @@ async def delete_jwt_credentials(id: int) -> int:
 
 
 async def connect_to_gateway():
-    async with httpx.AsyncClient(base_url=KONG_URL, headers=headers) as c:
+    async with httpx.AsyncClient(base_url=config.kong_url, headers=headers) as c:
         r = await c.get('/')
         if not r.status_code == 200:
-            logger.error('Kong API gateway unreachable!')
+            print('Kong API gateway unreachable!')
         else:
-            logger.info('gateway connected')
+            print('gateway connected')
 
 # asyncio.run(connect_to_gateway())

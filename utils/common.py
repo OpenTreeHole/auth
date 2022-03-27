@@ -1,70 +1,50 @@
-import time
 from email.message import EmailMessage
-from functools import wraps
-from inspect import isawaitable
-from typing import Union, List
+from typing import Union, List, Optional
 
 import aiosmtplib
-from sanic import Request, Sanic
-from sanic.exceptions import Unauthorized
+from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from config import config
 from models import User
+from utils.exceptions import Unauthorized
 from utils.jwt_utils import decode_payload
 from utils.orm import get_object_or_404
 
-app = Sanic.get_app()
+token_scheme = HTTPBearer(auto_error=False)
 
 
-def timer(func):
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        func(*args, **kwargs)
-        end = time.time()
-        print(f'{func.__name__} consumed {(end - start) * 1000} ms')
+class JWTValidator:
+    def __init__(self, token_type: str = 'access'):
+        self.token_type = token_type
+        self.debug = False
 
-    return wrapper
-
-
-async def _authorize(request: Request, token_type) -> User:
-    if app.config['DEBUG']:
-        user = await User.get_or_none(id=1)
-        if not user:
-            user = await User.create_user(email='', password='')
-        return user
-    payload = decode_payload(request.ctx.token)
-    if not payload or payload.get('type') != token_type and not app.config['DEBUG']:
-        raise Unauthorized(f'{token_type} token invalid', scheme='Bearer')
-    return await get_object_or_404(User, id=payload.get('uid'))
+    async def __call__(self, token: Optional[HTTPAuthorizationCredentials] = Depends(token_scheme)):
+        if config.debug and self.debug:
+            user = await User.get_or_none(id=1)
+            if not user:
+                user = await User.create_user(email='', password='')
+            return user
+        if not token:
+            raise Unauthorized('Bearer token required')
+        payload = decode_payload(token.credentials)
+        if not payload or payload.get('type') != self.token_type:
+            raise Unauthorized(f'{self.token_type} token invalid')
+        return await get_object_or_404(User, id=payload.get('uid'))
 
 
-def authorized(token_type='access'):
-    """
-    位于 API 网关之后，认为 token 已校验，仅检查 token type
-    """
-
-    def decorator(f):
-        @wraps(f)
-        async def decorated_function(request: Request, *args, **kwargs):
-            request.ctx.user = await _authorize(request, token_type)
-            response = f(request, *args, **kwargs)
-            if isawaitable(response):
-                response = await response
-
-            return response
-
-        return decorated_function
-
-    return decorator
+get_user = JWTValidator()
+get_user_by_refresh_token = JWTValidator(token_type='refresh')
 
 
 async def send_email(subject: str, content: str, receivers: Union[List[str], str]) -> bool:
     message = EmailMessage()
-    message['From'] = app.config.get('EMAIL_USER', '')
+    message['From'] = config.email_user
     message['To'] = ','.join(receivers) if isinstance(receivers, list) else receivers
     message["Subject"] = subject
     message.set_content(content)
 
-    if app.config['DEBUG']:
+    if config.debug:
         for i in message.items():
             print(f'{i[0]}: {i[1]}')
         print('\n', message.get_content())
@@ -72,10 +52,10 @@ async def send_email(subject: str, content: str, receivers: Union[List[str], str
 
     await aiosmtplib.send(
         message,
-        hostname=app.config.get('EMAIL_HOST', ''),
-        port=app.config.get('EMAIL_PORT', 465),
-        username=app.config.get('EMAIL_USER', ''),
-        password=app.config.get('EMAIL_PASSWORD', ''),
-        use_tls=app.config.get('EMAIL_TLS', True)
+        hostname=config.email_host,
+        port=config.email_port,
+        username=config.email_user,
+        password=config.email_password,
+        use_tls=config.email_use_tls
     )
     return True

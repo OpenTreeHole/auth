@@ -1,58 +1,39 @@
-from sanic import Request, json, Sanic, Blueprint
-from sanic.exceptions import Unauthorized
-from sanic_ext.extensions.openapi import openapi
+from fastapi import APIRouter, Depends
 
 from auth.response import TokensResponse, MessageResponse
 from auth.serializers import LoginModel
 from models import User
-from utils import myopenapi
 from utils.auth import many_hashes, check_password
-from utils.common import authorized
+from utils.common import get_user, get_user_by_refresh_token
+from utils.exceptions import Unauthorized
 from utils.jwt_utils import create_tokens
 from utils.kong import delete_jwt_credentials
 from utils.orm import get_object_or_404
-from utils.validator import validate
 
-app = Sanic.get_app()
-bp = Blueprint('token')
+router = APIRouter(tags=['token'])
 
 
-@bp.get('/login_required')
-@authorized()
-async def login_required(request: Request):
-    return json({'message': 'you are currently logged in', 'uid': request.ctx.user.id})
+@router.get('/login_required')
+async def login_required(user: User = Depends(get_user)):
+    return {'message': 'you are currently logged in', 'uid': user.pk}
 
 
-@bp.post('/login')
-@openapi.description('用户名密码登录')
-@myopenapi.body(LoginModel.construct())
-@myopenapi.response(200, TokensResponse)
-@validate(json=LoginModel)
-async def login(request: Request, body: LoginModel):
+@router.post('/login', response_model=TokensResponse)
+async def login(body: LoginModel):
     user = await get_object_or_404(User, identifier=many_hashes(body.email))
     if not check_password(body.password, user.password):
         raise Unauthorized('password incorrect')
     access_token, refresh_token = await create_tokens(user)
-    return json({'access': access_token, 'refresh': refresh_token})
+    return {'access': access_token, 'refresh': refresh_token, 'message': 'login successful'}
 
 
-@bp.get('/logout')
-@openapi.description('单点退出，吊销 refresh token')
-@openapi.secured('token')
-@myopenapi.response(200, MessageResponse)
-@authorized()
-async def logout(request: Request):
-    user: User = request.ctx.user
+@router.get('/logout', response_model=MessageResponse)
+async def logout(user: User = Depends(get_user)):
     await delete_jwt_credentials(user.id)
-    return json({'message': 'logout successful'})
+    return {'message': 'logout successful'}
 
 
-@bp.post('/refresh')
-@openapi.description('用 refresh token 刷新 access token 和 refresh token')
-@openapi.secured('token')
-@myopenapi.response(200, TokensResponse)
-@authorized(token_type='refresh')
-async def refresh(request: Request):
-    user: User = request.ctx.user
+@router.post('/refresh', response_model=TokensResponse)
+async def refresh(user: User = Depends(get_user_by_refresh_token)):
     access_token, refresh_token = await create_tokens(user)
-    return json({'access': access_token, 'refresh': refresh_token})
+    return {'access': access_token, 'refresh': refresh_token, 'message': 'refresh successful'}

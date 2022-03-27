@@ -3,11 +3,12 @@ from hashlib import sha3_224
 from typing import Optional
 from typing import Type, Tuple, Union
 
-from sanic.exceptions import NotFound
 from tortoise import Model
 from tortoise.contrib.pydantic import PydanticModel, PydanticListModel, pydantic_model_creator, \
     pydantic_queryset_creator
 from tortoise.queryset import MODEL, QuerySet
+
+from utils.exceptions import NotFound
 
 
 async def get_object_or_404(cls: Type[MODEL], *args, **kwargs) -> MODEL:

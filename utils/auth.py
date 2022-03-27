@@ -5,9 +5,8 @@ import secrets
 import pyotp
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-from sanic import Sanic
 
-app = Sanic.get_app()
+from config import config, cache
 
 
 def many_hashes(string: str) -> str:
@@ -48,8 +47,8 @@ def get_public_key(key_file):
         return serialization.load_pem_public_key(f.read())
 
 
-PUBLIC_KEY = get_public_key(app.config.get('EMAIL_PUBLIC_KEY_PATH', 'data/treehole_demo_public.pem'))
-PRIVATE_KEY = get_private_key(app.config.get('EMAIL_PRIVATE_KEY_PATH', 'data/treehole_demo_private.pem'))
+PUBLIC_KEY = get_public_key(config.email_public_key_path)
+PRIVATE_KEY = get_private_key(config.email_private_key_path)
 
 PADDING = padding.OAEP(
     mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -69,7 +68,7 @@ def rsa_decrypt(encrypted: str) -> str:
 
 
 totp = pyotp.TOTP(
-    base64.b32encode(app.config.get('REGISTER_API_KEY_SEED', '').encode()).decode(),
+    base64.b32encode(config.register_apikey_seed.encode()).decode(),
     digest=hashlib.sha256, interval=5, digits=16
 )
 
@@ -83,10 +82,10 @@ async def set_verification_code(email: str, scope='register') -> str:
     缓存中设置验证码，key = {scope}-{many_hashes(email)}
     """
     code = str(secrets.randbelow(1000000)).zfill(6)
-    await app.ctx.cache.set(
+    await cache.set(
         key=f'{scope}-{many_hashes(email)}',
         value=code,
-        ttl=app.config['VERIFICATION_CODE_EXPIRES'] * 60
+        ttl=config.verification_code_expires * 60
     )
     return code
 
@@ -95,7 +94,7 @@ async def check_verification_code(email: str, code: str, scope='register') -> bo
     """
     检查验证码
     """
-    stored_code = await app.ctx.cache.get(f'{scope}-{many_hashes(email)}')
+    stored_code = await cache.get(f'{scope}-{many_hashes(email)}')
     return code == stored_code
 
 

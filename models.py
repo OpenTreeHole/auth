@@ -1,11 +1,8 @@
-from sanic import Sanic
 from tortoise import fields
 from tortoise.models import Model
 
 from utils import kong
 from utils.auth import rsa_encrypt, many_hashes, make_password
-
-app = Sanic.get_app()
 
 
 class User(Model):

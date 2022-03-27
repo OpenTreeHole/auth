@@ -1,8 +1,11 @@
-class MessageResponse:
+from pydantic import BaseModel
+
+
+class MessageResponse(BaseModel):
     message: str
 
 
-class TokensResponse:
+class TokensResponse(MessageResponse):
     access: str
     refresh: str
 

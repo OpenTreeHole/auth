@@ -3,12 +3,9 @@ from typing import Tuple, Optional
 
 import jwt
 from jwt import DecodeError
-from sanic import Sanic
 
 from models import User
 from utils.kong import get_jwt_credential, JwtCredential
-
-app = Sanic.get_app()
 
 
 def decode_payload(token: str) -> Optional[dict]:
