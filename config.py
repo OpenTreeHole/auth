@@ -1,19 +1,32 @@
+import os
 from datetime import tzinfo
 from typing import List
 
 import pytz
 from aiocache import Cache
 from fastapi.openapi.utils import get_openapi
-from pydantic import BaseSettings
+from pydantic import BaseSettings, Field
+from pytz import UnknownTimeZoneError
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 
 cache = Cache()
 
 
+def default_debug() -> bool:
+    return os.getenv('MODE', 'dev') != 'production'
+
+
+def parse_tz() -> tzinfo:
+    try:
+        return pytz.timezone(os.getenv('TZ', 'Asia/Shanghai'))
+    except UnknownTimeZoneError:
+        return pytz.UTC
+
+
 class Settings(BaseSettings):
     mode: str = 'dev'
-    debug: bool = True
+    debug: bool = Field(default_factory=default_debug)
     tz: tzinfo = pytz.UTC
     db_url: str = 'sqlite://db.sqlite3'
     test_db: str = 'sqlite://:memory:'
@@ -31,9 +44,11 @@ class Settings(BaseSettings):
     register_apikey_seed: str = ''
     kong_url: str = 'http://kong:8001'
     kong_token: str = ''
+    authorize_in_debug: bool = True
 
 
-config = Settings()
+config = Settings(tz=parse_tz())
+print(config.tz)
 if config.mode != 'production':
     print(f'server is running in {config.mode} mode, do not use in production')
 if not config.email_whitelist:

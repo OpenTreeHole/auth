@@ -17,10 +17,9 @@ token_scheme = HTTPBearer(auto_error=False)
 class JWTValidator:
     def __init__(self, token_type: str = 'access'):
         self.token_type = token_type
-        self.debug = False
 
     async def __call__(self, token: Optional[HTTPAuthorizationCredentials] = Depends(token_scheme)):
-        if config.debug and self.debug:
+        if config.debug and not config.authorize_in_debug:
             user = await User.get_or_none(id=1)
             if not user:
                 user = await User.create_user(email='', password='')

@@ -22,3 +22,10 @@ class PunishmentAdd(BaseModel):
 class PageModel(BaseModel):
     size: Optional[int] = config.default_size
     offset: Optional[int] = 0
+
+
+class UserModify(BaseModel):
+    is_admin: Optional[bool]
+    nickname: Optional[str]
+    silent: Optional[dict]
+    offense_count: Optional[int]
