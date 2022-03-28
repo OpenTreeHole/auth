@@ -3,3 +3,4 @@
 *.env
 
 db.sqlite3*
+try.py

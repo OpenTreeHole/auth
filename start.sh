@@ -1,4 +1,4 @@
 #!/bin/sh
 aerich migrate
 aerich upgrade
-python app.py
+uvicorn --host 0.0.0.0 main:app

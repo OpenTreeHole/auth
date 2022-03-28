@@ -19,7 +19,7 @@ COPY --from=builder /www/backend/.venv /www/backend/.venv
 COPY . /www/backend
 
 ENV PATH="/www/backend/.venv/bin:$PATH"
-ENV SANIC_MODE="production"
+ENV MODE="production"
 
 EXPOSE 8000
 
