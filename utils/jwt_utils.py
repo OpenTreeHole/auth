@@ -31,7 +31,7 @@ def create_access_token(payload: dict, credential: JwtCredential) -> str:
     return jwt.encode(payload, credential.secret, algorithm=credential.algorithm)
 
 
-async def create_refresh_token(payload: dict, credential: JwtCredential) -> str:
+def create_refresh_token(payload: dict, credential: JwtCredential) -> str:
     payload['type'] = 'refresh'
     payload['exp'] = payload['iat'] + timedelta(days=30)
     refresh_token = jwt.encode(payload, credential.secret, algorithm=credential.algorithm)
@@ -57,4 +57,4 @@ async def create_tokens(user: User) -> Tuple[str, str]:
         'silent': user.silent,
         'offense_count': user.offense_count
     }
-    return create_access_token(payload, credential), await create_refresh_token(payload, credential)
+    return create_access_token(payload, credential), create_refresh_token(payload, credential)
