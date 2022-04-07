@@ -1,16 +1,15 @@
 import os
+import re
 from datetime import tzinfo
 from typing import List
 
 import pytz
-from aiocache import Cache
+from aiocache import caches
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseSettings, Field
 from pytz import UnknownTimeZoneError
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
-
-cache = Cache()
 
 
 def default_debug() -> bool:
@@ -45,9 +44,26 @@ class Settings(BaseSettings):
     kong_url: str = 'http://kong:8001'
     kong_token: str = ''
     authorize_in_debug: bool = True
+    redis_url: str = 'redis://redis:6379'
 
 
 config = Settings(tz=parse_tz())
+if not config.debug:
+    match = re.match(r'redis://(.+):(\d+)', config.redis_url)
+    assert match
+    caches.set_config({
+        'default': {
+            'cache': 'aiocache.RedisCache',
+            'endpoint': match.group(1),
+            'port': match.group(2),
+            'timeout': 5
+        }})
+else:
+    caches.set_config({
+        'default': {
+            'cache': 'aiocache.SimpleMemoryCache'
+        }})
+
 if config.mode != 'production':
     print(f'server is running in {config.mode} mode, do not use in production')
 if not config.email_whitelist:
@@ -63,7 +79,7 @@ TORTOISE_ORM = {
         'default': config.db_url
     },
     'use_tz': True,
-    'timezone': str(config.tz)
+    'timezone': 'utc'
 }
 from main import app
 

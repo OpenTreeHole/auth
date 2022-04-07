@@ -3,10 +3,13 @@ import hashlib
 import secrets
 
 import pyotp
+from aiocache import caches
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from config import config, cache
+from config import config
+
+cache = caches.get('default')
 
 
 def many_hashes(string: str) -> str:

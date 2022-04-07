@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+from aiocache import caches
 from httpx import AsyncClient
 from tortoise.contrib import test
 from tortoise.contrib.test import finalizer, initializer
@@ -9,7 +10,7 @@ from main import app
 
 client = AsyncClient(app=app, base_url='http://test')
 
-from config import config, cache
+from config import config
 
 from models import User
 from utils.auth import many_hashes, totp, set_verification_code, check_verification_code
@@ -22,6 +23,7 @@ def initialize_tests(request):
     request.addfinalizer(finalizer)
 
 
+cache = caches.get('default')
 ACCESS_TOKEN = ''
 REFRESH_TOKEN = ''
 USER = User()
