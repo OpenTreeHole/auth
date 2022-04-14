@@ -2,19 +2,14 @@ import asyncio
 
 import pytest
 from aiocache import caches
-from httpx import AsyncClient
 from tortoise.contrib import test
 from tortoise.contrib.test import finalizer, initializer
 
-from main import app
-
-client = AsyncClient(app=app, base_url='http://test')
-
 from config import config
-
 from models import User
 from utils.auth import many_hashes, totp, set_verification_code, check_verification_code
 from utils.jwt_utils import decode_payload
+from . import client
 
 
 @pytest.fixture(scope='session', autouse=True)
