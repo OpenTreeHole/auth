@@ -4,7 +4,17 @@ import secrets
 P = 2 ** 521 - 1
 MAX_LENGTH = 64
 
-Shares = list[tuple[int, int]]
+
+class Share:
+    def __init__(self, x: int, y: int):
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return f'{self.x}\n{self.y}'
+
+
+Shares = list[Share]
 
 
 def modular_multiplicative_inverse(x: int, p: int = P) -> int:
@@ -32,12 +42,12 @@ def modular_multiplicative_inverse(x: int, p: int = P) -> int:
     return x
 
 
-def lagrange(share: Shares) -> int:
+def lagrange(shares: Shares) -> int:
     """
     计算拉格朗日插值的常数项 a0
     """
-    x = [i[0] for i in share]
-    length = len(share)
+    x = [i.x for i in shares]
+    length = len(shares)
     s = 0
     for i in range(length):
         pi = 1
@@ -45,7 +55,7 @@ def lagrange(share: Shares) -> int:
             if i == j:
                 continue
             pi *= x[j] * modular_multiplicative_inverse(x[j] - x[i]) % P
-        s = (s + share[i][1] * pi) % P
+        s = (s + shares[i].y * pi) % P
     return s
 
 
@@ -62,7 +72,7 @@ def generate(secret: int, num: int, threshold: int) -> Shares:
     shares = []
     for i in range(num):
         x = i + 1
-        shares.append((x, evaluate(coefficient, x)))
+        shares.append(Share(x=x, y=evaluate(coefficient, x)))
     return shares
 
 

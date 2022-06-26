@@ -2,8 +2,9 @@ from tortoise import fields
 from tortoise.manager import Manager
 from tortoise.models import Model
 
+import shamir.gpg
 from utils import kong
-from utils.auth import rsa_encrypt, many_hashes, make_password
+from utils.auth import many_hashes, make_password
 
 
 class IsActiveManager(Manager):
@@ -41,11 +42,12 @@ class User(Model):
     @classmethod
     async def create_user(cls, email: str, password: str, **kwargs) -> 'User':
         user = await cls.create(
-            email=rsa_encrypt(email),
+            email='',
             identifier=many_hashes(email),
             password=make_password(password),
             **kwargs
         )
+        await shamir.gpg.encrypt_email(email, user.id)
         await kong.create_user(user.id)
         return user
 
@@ -71,3 +73,13 @@ class Punishment(Model):
         exclude = []
         allow_cycles = False
         max_recursion = 1
+
+
+class ShamirEmail(Model):
+    """
+    shamir secret sharing(SSS) shares of user email
+    """
+    id = fields.IntField(pk=True)
+    key = fields.TextField()
+    user: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='shamir_emails')
+    encrypted_by = fields.CharField(max_length=128)
