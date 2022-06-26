@@ -24,7 +24,6 @@ orjson = "^3.6.7"
 fastapi = { extras = ["all"], version = "^0.75.0" }
 httpx = { extras = ["http2"], version = "^0.22.0" }
 aiohttp = {extras = ["speedups"], version = "^3.8.1"}
-numpy = "^1.23.0"
 
 
 [tool.poetry.dev-dependencies]

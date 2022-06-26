@@ -1,51 +1,88 @@
 import secrets
 
-import numpy as np
+# the 13th Mersenne prime
+P = 2 ** 521 - 1
+MAX_LENGTH = 64
+
+Shares = list[tuple[int, int]]
 
 
-def lagrange(x: np.ndarray, y: np.ndarray) -> int:
+def modular_multiplicative_inverse(x: int, p: int = P) -> int:
+    """
+    division in integers modulus p means finding the inverse of the denominator
+    modulo p and then multiplying the numerator by this inverse
+    (Note: inverse of A is B such that A*B % p == 1)
+    this can be computed via extended euclidean algorithm
+    https://en.wikipedia.org/wiki/Modular_multiplicative_inverse#Computation
+    """
+
+    def extended_gcd(a: int, b: int) -> (int, int):
+        x = 0
+        last_x = 1
+        y = 1
+        last_y = 0
+        while b != 0:
+            quot = a // b
+            a, b = b, a % b
+            x, last_x = last_x - quot * x, x
+            y, last_y = last_y - quot * y, y
+        return last_x, last_y
+
+    x, _ = extended_gcd(x, p)
+    return x
+
+
+def lagrange(share: Shares) -> int:
     """
     计算拉格朗日插值的常数项 a0
-    Args:
-        x: x_i 向量
-        y: y_i 向量
-
-    Returns:
-        拉格朗日插值的常数项 a0
     """
-    if len(x) != len(y):
-        raise ValueError('x must be the same length as y')
+    x = [i[0] for i in share]
+    length = len(share)
     s = 0
-    for i in range(len(y)):
+    for i in range(length):
         pi = 1
-        for j in range(len(y)):
+        for j in range(length):
             if i == j:
                 continue
-            pi *= - x[j] / (x[i] - x[j])
-        s += y[i] * pi
-    s = round(s)
+            pi *= x[j] * modular_multiplicative_inverse(x[j] - x[i]) % P
+        s = (s + share[i][1] * pi) % P
     return s
 
 
-def generate(secret: int, num: int, threshold: int) -> np.ndarray:
-    coefficient = np.zeros(threshold)
-    coefficient[0] = secret
-    for i in range(threshold - 1):
-        coefficient[i + 1] = secrets.randbelow(1145141919810)
-    vander = np.vander(np.arange(1, num + 1), threshold, increasing=True)
-    return vander.dot(coefficient)
+def generate(secret: int, num: int, threshold: int) -> Shares:
+    def evaluate(coefficient: list[int], x: int) -> int:
+        acc = 0
+        power = 1
+        for c in coefficient:
+            acc = (acc + c * power) % P
+            power *= x % P
+        return acc
+
+    coefficient = [secret] + [secrets.randbelow(P) for i in range(threshold - 1)]
+    shares = []
+    for i in range(num):
+        x = i + 1
+        shares.append((x, evaluate(coefficient, x)))
+    return shares
 
 
-def encrypt(secret: str, num: int = 7, threshold: int = 0) -> np.ndarray:
+def encrypt(secret: str, num: int = 7, threshold: int = 0) -> Shares:
+    if len(secret) > MAX_LENGTH:
+        raise ValueError(f'length of secret should less than {MAX_LENGTH}')
     secret = int.from_bytes(secret.encode(), byteorder='little')
+    if secret >= P:
+        raise ValueError(f'secret should not bigger than P = {P}')
     if threshold == 0:
         threshold = num // 2 + 1
+    elif threshold > num:
+        raise ValueError('threshold is bigger than num, secret could not be recovered')
     return generate(secret, num, threshold)
 
 
-def decrypt(x: np.ndarray, y: np.ndarray) -> str:
-    return lagrange(x, y).to_bytes(length=30, byteorder='little').decode().replace('\x00', '')
+def decrypt(share: Shares) -> str:
+    return lagrange(share).to_bytes(length=MAX_LENGTH, byteorder='little').decode().replace('\x00', '')
 
 
 if __name__ == '__main__':
-    print(lagrange([1, 2, 3, 4, 5, 6, 7], generate(123456789, 7, 4)))
+    print(lagrange(generate(12374689789789, 7, 4)[:4]))
+    print(decrypt(encrypt('aaa')))
