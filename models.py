@@ -1,10 +1,13 @@
+import asyncio
+
 from tortoise import fields
 from tortoise.manager import Manager
 from tortoise.models import Model
 
 import shamir.gpg
 from utils import kong
-from utils.auth import many_hashes, make_password
+from utils.auth import many_hashes, make_password, sha3
+from utils.kong import delete_jwt_credentials
 
 
 class IsActiveManager(Manager):
@@ -41,15 +44,27 @@ class User(Model):
 
     @classmethod
     async def create_user(cls, email: str, password: str, **kwargs) -> 'User':
+        # TODO: identifier
         user = await cls.create(
             email='',
             identifier=many_hashes(email),
             password=make_password(password),
             **kwargs
         )
-        await shamir.gpg.encrypt_email(email, user.id)
-        await kong.create_user(user.id)
+        await asyncio.gather(
+            RegisteredEmail.add(email),
+            shamir.gpg.encrypt_email(email, user.id),
+            kong.create_user(user.id)
+        )
         return user
+
+    async def delete_user(self, email: str):
+        self.is_active = False
+        await asyncio.gather(
+            self.save(),
+            delete_jwt_credentials(self.id),
+            DeletedEmail.add(email)
+        )
 
     # def is_silenced(self, division_id):
     #     now = datetime.now(app.config['TZ'])
@@ -75,11 +90,26 @@ class Punishment(Model):
         max_recursion = 1
 
 
-class ShamirEmail(Model):
-    """
-    shamir secret sharing(SSS) shares of user email
-    """
-    id = fields.IntField(pk=True)
-    key = fields.TextField()
-    user: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='shamir_emails')
-    encrypted_by = fields.CharField(max_length=128)
+class EmailList(Model):
+    hash = fields.CharField(max_length=128, pk=True)
+
+    @classmethod
+    async def has_email(cls, email: str) -> bool:
+        return await cls.filter(hash=sha3(email)).exists()
+
+    @classmethod
+    async def add(cls, email: str):
+        await cls.create(hash=sha3(email))
+
+    class Meta:
+        abstract = True
+
+
+class RegisteredEmail(EmailList):
+    class Meta:
+        table = "registered_email"
+
+
+class DeletedEmail(EmailList):
+    class Meta:
+        table = "deleted_email"

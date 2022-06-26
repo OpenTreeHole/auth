@@ -1,6 +1,6 @@
 import gnupg
 
-from models import ShamirEmail
+from shamir import ShamirEmail
 from shamir.core import encrypt
 
 gpg = gnupg.GPG()

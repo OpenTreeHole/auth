@@ -20,6 +20,7 @@ async def login_required(user: User = Depends(get_user)):
 
 @router.post('/login', response_model=TokensResponse)
 async def login(body: LoginModel):
+    # TODO: login v2
     user = await get_object_or_404(User, identifier=many_hashes(body.email))
     if not check_password(body.password, user.password):
         raise Unauthorized('password incorrect')
