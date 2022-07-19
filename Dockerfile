@@ -14,7 +14,7 @@ FROM python:3.9-slim
 
 WORKDIR /www/backend
 
-RUN apt install gnupg
+RUN apt update && apt install gnupg
 
 COPY --from=builder /www/backend/.venv /www/backend/.venv
 
