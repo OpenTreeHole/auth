@@ -8,7 +8,6 @@ from aiocache import caches
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseSettings, Field
 from pytz import UnknownTimeZoneError
-from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 
 
@@ -69,10 +68,12 @@ if config.mode != 'production':
 if not config.email_whitelist:
     print(f'email whitelist not set')
 
+MODELS = ['models', 'shamir']
+
 TORTOISE_ORM = {
     'apps': {
         'models': {
-            'models': ['models', 'aerich.models']
+            'models': ['aerich.models'] + MODELS
         }
     },
     'connections': {  # aerich 暂不支持 sqlite
@@ -83,8 +84,6 @@ TORTOISE_ORM = {
 }
 from main import app
 
-import models
-
 if config.mode != 'test':
     register_tortoise(
         app,
@@ -92,7 +91,9 @@ if config.mode != 'test':
         generate_schemas=True,
         add_exception_handlers=True,
     )
-Tortoise.init_models([models], 'models')
+
+
+# Tortoise.init_models([models], 'models')
 
 
 def custom_openapi():

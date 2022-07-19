@@ -4,12 +4,9 @@ from fastapi import APIRouter
 from fastapi.params import Depends
 
 from admin.serializers import UserModel, PageModel, UserList, UserModify
-from auth.serializers import PasswordModel
 from models import User
-from utils.auth import check_password
 from utils.common import get_user
 from utils.exceptions import Forbidden
-from utils.kong import delete_jwt_credentials
 from utils.orm import get_object_or_404, serialize
 
 router = APIRouter(tags=['user'])
@@ -44,13 +41,3 @@ async def modify_user(user_id: int, body: UserModify, from_user: User = Depends(
     user = await user.update_from_dict(body.dict())
     await user.save()
     return await serialize(user, UserModel)
-
-
-@router.delete('/users/me', status_code=204)
-async def delete_user(body: PasswordModel, user: User = Depends(get_user)):
-    if not check_password(body.password, user.password):
-        raise Forbidden('password incorrect')
-    user.is_active = False
-    await user.save()
-    await delete_jwt_credentials(user.id)
-    return None

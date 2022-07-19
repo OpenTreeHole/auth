@@ -12,6 +12,10 @@ from config import config
 cache = caches.get('default')
 
 
+def sha3(string: str) -> str:
+    return hashlib.sha3_512(string.encode()).hexdigest()
+
+
 def many_hashes(string: str) -> str:
     iterations = 1
     byte_string = bytes(string.encode('utf-8'))
