@@ -22,26 +22,45 @@ def parse_tz() -> tzinfo:
         return pytz.UTC
 
 
+def get_secret(name: str, default: str = '', secrets_dir: str = '/var/run/secrets') -> str:
+    """
+    The function to get variables from docker secrets
+    :param name: the name of the docker secret
+    :param default: the default value of the variable
+    :param secrets_dir: the directory stores the secrets
+    :return: the secret value after type cast
+    """
+    try:
+        with open(os.path.join(secrets_dir, name), 'r') as secret_file:
+            value = secret_file.read().rstrip('\n')
+    except Exception as e:
+        print(e)
+        if value is None:
+            value = default
+
+    return value
+
+
 class Settings(BaseSettings):
     mode: str = 'dev'
     debug: bool = Field(default_factory=default_debug)
     tz: tzinfo = pytz.UTC
-    db_url: str = 'sqlite://db.sqlite3'
+    db_url: str = get_secret('db_url', 'sqlite://db.sqlite3')
     test_db: str = 'sqlite://:memory:'
     default_size: int = 10
     site_name: str = 'Open Tree Hole'
     email_whitelist: List[str] = []
     verification_code_expires: int = 10
     email_user: str = ''
-    email_password: str = ''
+    email_password: str = get_secret('email_password')
     email_host: str = ''
     email_port: int = 465
     email_use_tls: bool = True
     email_public_key_path: str = 'data/treehole_demo_public.pem'
     email_private_key_path: str = 'data/treehole_demo_private.pem'
-    register_apikey_seed: str = ''
+    register_apikey_seed: str = get_secret('register_apikey_seed')
     kong_url: str = 'http://kong:8001'
-    kong_token: str = ''
+    kong_token: str = get_secret('kong_token')
     authorize_in_debug: bool = True
     redis_url: str = 'redis://redis:6379'
 
