@@ -35,8 +35,7 @@ def get_secret(name: str, default: str = '', secrets_dir: str = '/var/run/secret
             value = secret_file.read().rstrip('\n')
     except Exception as e:
         print(e)
-        if value is None:
-            value = default
+        return default
 
     return value
 
