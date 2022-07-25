@@ -1,3 +1,4 @@
+import base64
 import os
 import re
 from datetime import tzinfo
@@ -31,7 +32,7 @@ def get_secret(name: str, default: str = '', secrets_dir: str = '/var/run/secret
     :return: the secret value after type cast
     """
     try:
-        with open(os.path.join(secrets_dir, name), 'r') as secret_file:
+        with open(os.path.join(secrets_dir, name), 'r', encoding='utf-8') as secret_file:
             value = secret_file.read().rstrip('\n')
     except Exception as e:
         print(e)
@@ -62,6 +63,7 @@ class Settings(BaseSettings):
     kong_token: str = get_secret('kong_token')
     authorize_in_debug: bool = True
     redis_url: str = 'redis://redis:6379'
+    identifier_salt: str = get_secret('identifier_salt', str(base64.b64encode(b''), 'utf-8'))
 
 
 config = Settings(tz=parse_tz())

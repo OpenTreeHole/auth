@@ -6,7 +6,7 @@ from auth.response import EmailVerifyResponse, APIKeyVerifyResponse, TokensRespo
 from auth.serializers import EmailModel, ApikeyVerifyModel, RegisterModel, LoginModel
 from config import config
 from models import User, RegisteredEmail, DeletedEmail
-from utils.auth import many_hashes, set_verification_code, check_api_key, check_verification_code, \
+from utils.auth import make_identifier, set_verification_code, check_api_key, check_verification_code, \
     delete_verification_code, make_password, check_password
 from utils.common import send_email, get_user
 from utils.exceptions import BadRequest, Forbidden
@@ -83,7 +83,7 @@ async def register(body: RegisterModel):
             raise BadRequest('该用户已注册，如果忘记密码，请使用忘记密码功能找回')
         else:
             # TODO: identifier
-            user = await User.all_objects.filter(identifier=many_hashes(body.email)).first()
+            user = await User.all_objects.filter(identifier=make_identifier(body.email)).first()
             user.is_active = True
             user.password = make_password(body.password)
             await user.save()
@@ -102,7 +102,7 @@ async def change_password(body: RegisterModel):
     if not await check_verification_code(body.email, body.verification, 'reset'):
         raise BadRequest('验证码错误')
     # TODO: identifier
-    user = await get_object_or_404(User, identifier=many_hashes(body.email))
+    user = await get_object_or_404(User, identifier=make_identifier(body.email))
     user.password = make_password(body.password)
     await user.save()
     await delete_jwt_credentials(user.id)
