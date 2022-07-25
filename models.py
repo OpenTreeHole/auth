@@ -21,17 +21,16 @@ class User(Model):
     identifier = fields.CharField(max_length=128, unique=True)  # sha3-512 of email
     password = fields.CharField(max_length=128)
     is_active = fields.BooleanField(default=True)
-    is_admin = fields.BooleanField(default=False)
     joined_time = fields.DatetimeField(auto_now_add=True)
+    last_login = fields.DatetimeField(auto_now_add=True)
     nickname = fields.CharField(max_length=32, default='user')
-    silent = fields.JSONField(default=dict)
     offense_count = fields.IntField(default=0)
-    punishments: fields.ReverseRelation['Punishment']
-    punishments_made: fields.ReverseRelation['Punishment']
+    permissions: fields.ReverseRelation['Permission']
+    permissions_made: fields.ReverseRelation['Permission']
     all_objects = Manager()
 
     def __str__(self):
-        return f'User#{self.id}'
+        return f'User#{self.id}({self.nickname})'
 
     class Meta:
         manager = IsActiveManager()
@@ -75,13 +74,15 @@ class User(Model):
     #         return expire_time > now
 
 
-class Punishment(Model):
+class Permission(Model):
     user: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='punishments')
+    user_id: int
     made_by: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='punishments_made')
     reason = fields.CharField(max_length=100, default='')
-    scope = fields.CharField(max_length=32, default='default')
+    name = fields.CharField(max_length=32, default='')
     start_time = fields.DatetimeField(auto_now_add=True)
     end_time = fields.DatetimeField(auto_now_add=True)
+    synced = fields.BooleanField(default=False)  # has synced to API gateway
 
     class PydanticMeta:
         exclude = []
