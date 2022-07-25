@@ -1,5 +1,5 @@
 from main import app
-from utils.auth import rsa_encrypt, rsa_decrypt, make_password, check_password, many_hashes
+from utils.auth import rsa_encrypt, rsa_decrypt, make_password, check_password, make_identifier
 
 print(app)
 
@@ -20,5 +20,5 @@ def test_password():
 
 
 def test_hash():
-    identifier = many_hashes('email')
+    identifier = make_identifier('email')
     assert len(identifier) <= 128
