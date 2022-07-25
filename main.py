@@ -1,3 +1,4 @@
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 
 app = FastAPI()  # app 实例化位于所有导入之前
@@ -14,3 +15,10 @@ app.include_router(user.router)
 @app.get('/')
 async def home():
     return {'message': 'hello world'}
+
+
+@app.on_event('startup')
+async def start_up():
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+    scheduler.add_job(permission.sync_permissions, 'interval', seconds=3600)

@@ -80,3 +80,11 @@ async def get_permission_by_id(id: int):
 async def list_permissions(query: PageModel = Depends()):
     permissions = Permission.all().offset(query.offset).limit(query.size)
     return permissions
+
+
+async def sync_permissions():
+    permissions = await Permission.filter(synced=False, end_time__lt=now())
+    for permission in permissions:
+        await kong.delete_acl(permission.user_id, permission.name)
+        permission.synced = True
+        await permission.save()

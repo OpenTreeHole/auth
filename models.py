@@ -77,11 +77,13 @@ class User(Model):
 
 class Permission(Model):
     user: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='punishments')
+    user_id: int
     made_by: fields.ForeignKeyRelation['User'] = fields.ForeignKeyField('models.User', related_name='punishments_made')
     reason = fields.CharField(max_length=100, default='')
     name = fields.CharField(max_length=32, default='')
     start_time = fields.DatetimeField(auto_now_add=True)
     end_time = fields.DatetimeField(auto_now_add=True)
+    synced = fields.BooleanField(default=False)  # has synced to API gateway
 
     class PydanticMeta:
         exclude = []
