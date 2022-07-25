@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     test_db: str = 'sqlite://:memory:'
     default_size: int = 10
     site_name: str = 'Open Tree Hole'
+    domain: str = 'fduhole.com'
     email_whitelist: List[str] = []
     verification_code_expires: int = 10
     email_user: str = ''
