@@ -6,7 +6,7 @@ from tortoise.models import Model
 
 import shamir.gpg
 from utils import kong
-from utils.auth import many_hashes, make_password, sha3
+from utils.auth import make_identifier, make_password, sha3
 from utils.kong import delete_jwt_credentials
 
 
@@ -43,10 +43,9 @@ class User(Model):
 
     @classmethod
     async def create_user(cls, email: str, password: str, **kwargs) -> 'User':
-        # TODO: identifier
         user = await cls.create(
             email='',
-            identifier=many_hashes(email),
+            identifier=make_identifier(email),
             password=make_password(password),
             **kwargs
         )

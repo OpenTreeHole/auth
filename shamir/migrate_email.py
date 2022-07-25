@@ -5,13 +5,15 @@ from tortoise import Tortoise
 import config
 from gpg import encrypt_email
 from models import User, RegisteredEmail
-from utils.auth import rsa_decrypt
+from utils.auth import rsa_decrypt, make_identifier
 
 
 async def run():
     for user in (await User.all()):
         email = rsa_decrypt(user.email)
+        user.identifier = make_identifier(email)
         await asyncio.gather(
+            user.save(),
             encrypt_email(email, user.id),
             RegisteredEmail.add(email)
         )
