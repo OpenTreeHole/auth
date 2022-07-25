@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from auth.response import TokensResponse, MessageResponse
 from auth.serializers import LoginModel
 from models import User
-from utils.auth import many_hashes, check_password
+from utils.auth import make_identifier, check_password
 from utils.common import get_user, get_user_by_refresh_token
 from utils.exceptions import Unauthorized
 from utils.jwt_utils import create_tokens
@@ -21,7 +21,7 @@ async def login_required(user: User = Depends(get_user)):
 @router.post('/login', response_model=TokensResponse)
 async def login(body: LoginModel):
     # TODO: login v2
-    user = await get_object_or_404(User, identifier=many_hashes(body.email))
+    user = await get_object_or_404(User, identifier=make_identifier(body.email))
     if not check_password(body.password, user.password):
         raise Unauthorized('password incorrect')
     access_token, refresh_token = await create_tokens(user)
