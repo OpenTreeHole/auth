@@ -76,4 +76,30 @@ async def connect_to_gateway():
         else:
             print('gateway connected')
 
-# asyncio.run(connect_to_gateway())
+
+async def get_acls(id: int) -> List[str]:
+    async with kong.get(f'/consumers/{id}/acls') as r:
+        json = await r.json(content_type=None)
+        if not r.status == 200:
+            raise ServerError(json.get('message'))
+        data = [acl['group'] for acl in json['data']]
+        data.sort()
+        return data
+
+
+async def add_acl(id: int, group: str) -> bool:
+    async with kong.post(f'/consumers/{id}/acls', json={
+        'group': group
+    }) as r:
+        if not (r.status == 201 or r.status == 409):
+            json = await r.json(content_type=None)
+            raise ServerError(json.get('message'))
+        return True
+
+
+async def delete_acl(id: int, group: str) -> bool:
+    async with kong.post(f'/consumers/{id}/acls/{group}', json={}) as r:
+        if not (r.status == 204 or r.status == 404):
+            json = await r.json(content_type=None)
+            raise ServerError(json.get('message'))
+        return True
