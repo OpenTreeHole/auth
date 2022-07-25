@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from admin.serializers import PermissionAdd, PermissionModel, PageModel, PermissionDelete
 from models import User, Permission
 from utils import kong
-from utils.common import get_user
+from utils.common import get_user, get_user_id
 from utils.exceptions import Forbidden
 from utils.orm import get_object_or_404
 from utils.values import now
@@ -61,8 +61,8 @@ async def delete_permission(user_id: int, name: str, body: PermissionDelete, fro
 
 # owner or admin
 @router.get('/users/{user_id}/permissions', response_model=List[PermissionModel])
-async def list_permissions_by_user(user_id: int, user: User = Depends(get_user)):
-    if not user.id == user_id:
+async def list_permissions_by_user(user_id: int, request_user_id: int = Depends(get_user_id)):
+    if not request_user_id == user_id:
         raise Forbidden()
     permissions = await Permission.filter(user_id=user_id)
     return permissions
