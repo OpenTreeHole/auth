@@ -50,12 +50,12 @@ async def verify_with_email_old(email: str):
         match = EmailModel(email=email)
     except ValidationError:
         raise BadRequest('email invalid')
-    return _verify_with_email(match.email)
+    return await _verify_with_email(match.email)
 
 
 @router.get('/verify/email', response_model=EmailVerifyResponse)
 async def verify_with_email(query: EmailModel = Depends()):
-    return _verify_with_email(query.email)
+    return await _verify_with_email(query.email)
 
 
 @router.get('/verify/apikey', response_model=APIKeyVerifyResponse)
