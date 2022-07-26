@@ -9,7 +9,7 @@ from utils.orm import models_creator
 PermissionModel, PermissionList = models_creator(Permission)
 UserModel, UserList = models_creator(
     User,
-    include=('joined_time', 'nickname', 'is_admin', 'silent', 'offense_count')
+    include=('joined_time', 'nickname', 'silent', 'offense_count')
 )
 
 

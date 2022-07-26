@@ -36,7 +36,6 @@ class User(Model):
         manager = IsActiveManager()
 
     class PydanticMeta:
-        # include = ['id', 'joined_time', 'nickname', 'is_admin', 'silent', 'offense_count']
         include = ['id']
         allow_cycles = False
         max_recursion = 1
