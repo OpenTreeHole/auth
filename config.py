@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     mode: str = 'dev'
     debug: bool = Field(default_factory=default_debug)
     tz: tzinfo = pytz.UTC
-    db_url: str = get_secret('db_url', 'sqlite://db.sqlite3', r'.\venv\secrets')
+    db_url: str = get_secret('db_url', 'sqlite://db.sqlite3')
     test_db: str = 'sqlite://:memory:'
     default_size: int = 10
     site_name: str = 'Open Tree Hole'
