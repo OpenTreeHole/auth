@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     authorize_in_debug: bool = True
     redis_url: str = 'redis://redis:6379'
     identifier_salt: str = get_secret('identifier_salt', str(base64.b64encode(b'123456'), 'utf-8'))
+    provision_key: str = get_secret('provision_key')
 
 
 config = Settings(tz=parse_tz())
