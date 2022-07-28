@@ -17,14 +17,16 @@ class IsActiveManager(Manager):
 
 class User(Model):
     id = fields.IntField(pk=True)
-    email = fields.CharField(max_length=1000)  # RSA encrypted email
+    email = fields.CharField(max_length=1000)  # deprecated
     identifier = fields.CharField(max_length=128, unique=True)  # sha3-512 of email
     password = fields.CharField(max_length=128)
     is_active = fields.BooleanField(default=True)
+    is_admin = fields.BooleanField(default=False)  # deprecated
     joined_time = fields.DatetimeField(auto_now_add=True)
     last_login = fields.DatetimeField(auto_now_add=True)
     nickname = fields.CharField(max_length=32, default='user')
     offense_count = fields.IntField(default=0)
+    roles = fields.JSONField(default=list)
     permissions: fields.ReverseRelation['Permission']
     permissions_made: fields.ReverseRelation['Permission']
     all_objects = Manager()
@@ -36,7 +38,7 @@ class User(Model):
         manager = IsActiveManager()
 
     class PydanticMeta:
-        include = ['id']
+        include = ('id', 'nickname', 'joined_time', 'last_login', 'roles', 'offense_count', 'is_admin')
         allow_cycles = False
         max_recursion = 1
 

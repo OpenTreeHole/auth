@@ -2,7 +2,7 @@ import base64
 import os
 import re
 from datetime import tzinfo
-from typing import List
+from typing import List, Optional
 
 import pytz
 from aiocache import caches
@@ -23,20 +23,18 @@ def parse_tz() -> tzinfo:
         return pytz.UTC
 
 
-def get_secret(name: str, default: str = '', secrets_dir: str = '/var/run/secrets') -> str:
+def get_secret(name: str) -> Optional[str]:
     """
     The function to get variables from docker secrets
     :param name: the name of the docker secret
-    :param default: the default value of the variable
-    :param secrets_dir: the directory stores the secrets
     :return: the secret value after type cast
     """
     try:
-        with open(os.path.join(secrets_dir, name), 'r', encoding='utf-8') as secret_file:
+        with open(os.path.join('/var/run/secrets', name), 'r', encoding='utf-8') as secret_file:
             value = secret_file.read().rstrip('\n')
     except Exception as e:
         print(e)
-        return default
+        return
 
     return value
 
@@ -45,7 +43,7 @@ class Settings(BaseSettings):
     mode: str = 'dev'
     debug: bool = Field(default_factory=default_debug)
     tz: tzinfo = pytz.UTC
-    db_url: str = get_secret('db_url', 'sqlite://db.sqlite3')
+    db_url: str = 'sqlite://db.sqlite3'
     test_db: str = 'sqlite://:memory:'
     default_size: int = 10
     site_name: str = 'Open Tree Hole'
@@ -53,21 +51,36 @@ class Settings(BaseSettings):
     email_whitelist: List[str] = []
     verification_code_expires: int = 10
     email_user: str = ''
-    email_password: str = get_secret('email_password')
+    email_password: str = ''
     email_host: str = ''
     email_port: int = 465
     email_use_tls: bool = True
     email_public_key_path: str = 'data/treehole_demo_public.pem'
     email_private_key_path: str = 'data/treehole_demo_private.pem'
-    register_apikey_seed: str = get_secret('register_apikey_seed')
+    register_apikey_seed: str = ''
     kong_url: str = 'http://kong:8001'
-    kong_token: str = get_secret('kong_token')
+    kong_token: str = ''
     authorize_in_debug: bool = True
     redis_url: str = 'redis://redis:6379'
-    identifier_salt: str = get_secret('identifier_salt', str(base64.b64encode(b'123456'), 'utf-8'))
+    identifier_salt: str = str(base64.b64encode(b'123456'), 'utf-8')
+    provision_key: str = ''
 
 
 config = Settings(tz=parse_tz())
+
+SECRET_FIELDS = [
+    'db_url',
+    'email_password',
+    'register_apikey_seed',
+    'identifier_salt',
+    'provision_key',
+    'kong_token'
+]
+for name in SECRET_FIELDS:
+    value = get_secret(name)
+    if value:
+        setattr(config, name, value)
+
 if not config.debug:
     match = re.match(r'redis://(.+):(\d+)', config.redis_url)
     assert match

@@ -7,10 +7,7 @@ from models import Permission, User
 from utils.orm import models_creator
 
 PermissionModel, PermissionList = models_creator(Permission)
-UserModel, UserList = models_creator(
-    User,
-    include=('joined_time', 'nickname', 'silent', 'offense_count')
-)
+UserModel, UserList = models_creator(User)
 
 
 class PermissionDelete(BaseModel):
