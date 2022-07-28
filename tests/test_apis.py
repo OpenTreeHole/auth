@@ -10,7 +10,7 @@ from main import app
 
 client = AsyncClient(app=app, base_url='http://test')
 
-from config import config
+from config import config, MODELS
 
 from models import User
 from utils.auth import make_identifier, totp, set_verification_code, check_verification_code
@@ -19,7 +19,7 @@ from utils.jwt_utils import decode_payload
 
 @pytest.fixture(scope='session', autouse=True)
 def initialize_tests(request):
-    initializer(['models'], db_url=config.test_db)
+    initializer(MODELS, db_url=config.test_db)
     request.addfinalizer(finalizer)
 
 
@@ -35,7 +35,7 @@ def generate_headers(token: str) -> dict:
 
 class TestCommon(test.TestCase):
     async def test_home(self):
-        res = await client.get('/')
+        res = await client.get('/api')
         assert res.status_code == 200
         assert res.json() == {'message': 'hello world'}
 
