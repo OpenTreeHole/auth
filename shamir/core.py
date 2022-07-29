@@ -71,7 +71,7 @@ def generate(secret: int, num: int, threshold: int) -> Shares:
     coefficient = [secret] + [secrets.randbelow(P) for i in range(threshold - 1)]
     shares = []
     for i in range(num):
-        x = i + 1
+        x = secrets.randbelow(P)
         shares.append(Share(x=x, y=evaluate(coefficient, x)))
     return shares
 
