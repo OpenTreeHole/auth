@@ -9,6 +9,7 @@ from utils.common import get_user_id
 
 
 class OauthServerRequest(BaseModel):
+    response_type: str = 'code'
     scope: str = "id nickname"
     client_id: str
 
@@ -17,12 +18,12 @@ class OauthServerRequest(BaseModel):
 async def oauth_server(body: OauthServerRequest, authenticated_userid: int = Depends(get_user_id)):
     authorize_url = 'https://auth.fduhole.com/api/oauth2/authorize'
     payload = {
-        "response_type": "code",
+        "response_type": body.response_type,
         "scope": body.scope,
         "client_id": body.client_id,
         "provision_key": config.provision_key,
         "authenticated_userid": authenticated_userid
     }
-    with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient() as client:
         res = await client.post(authorize_url, json=payload)
         return res.json()
