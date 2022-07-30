@@ -1,6 +1,5 @@
-.idea
 .venv
 *.env
-
+.history
 db.sqlite3*
 try.py
