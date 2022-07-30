@@ -22,7 +22,7 @@ async def oauth_server(body: OauthServerRequest, authenticated_userid: int = Dep
         "scope": body.scope,
         "client_id": body.client_id,
         "provision_key": config.provision_key,
-        "authenticated_userid": authenticated_userid
+        "authenticated_userid": str(authenticated_userid)
     }
     async with httpx.AsyncClient() as client:
         res = await client.post(authorize_url, json=payload)
