@@ -1,4 +1,3 @@
 #!/bin/sh
-aerich migrate
-aerich upgrade
-uvicorn --host 0.0.0.0 main:app --root-path=/api
+python migrate.py
+uvicorn --host 0.0.0.0 main:app --no-access-log

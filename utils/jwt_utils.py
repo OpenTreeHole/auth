@@ -5,7 +5,9 @@ import jwt
 from jwt import DecodeError
 
 from models import User
-from utils.kong import get_jwt_credential, JwtCredential
+from utils.kong import get_jwt_credential, JwtCredential, get_acls
+from utils.orm import serialize, models_creator
+from utils.values import now
 
 
 def decode_payload(token: str) -> Optional[dict]:
@@ -34,8 +36,10 @@ def create_access_token(payload: dict, credential: JwtCredential) -> str:
 def create_refresh_token(payload: dict, credential: JwtCredential) -> str:
     payload['type'] = 'refresh'
     payload['exp'] = payload['iat'] + timedelta(days=30)
-    refresh_token = jwt.encode(payload, credential.secret, algorithm=credential.algorithm)
-    return refresh_token
+    return jwt.encode(payload, credential.secret, algorithm=credential.algorithm)
+
+
+JWTUser, _ = models_creator(User, exclude=('joined_time', 'last_login'))
 
 
 async def create_tokens(user: User) -> Tuple[str, str]:
@@ -47,14 +51,16 @@ async def create_tokens(user: User) -> Tuple[str, str]:
         access_token, refresh_token
 
     """
+    user.last_login = now()
+    user.roles = await get_acls(user.id)
+    await user.save()
+
     credential = await get_jwt_credential(user.id)
     payload = {
         'uid': user.id,
         'iss': credential.key,
         'iat': datetime.now(tz=timezone.utc),
-        'nickname': user.nickname,
-        'is_admin': user.is_admin,
-        'silent': user.silent,
-        'offense_count': user.offense_count
     }
+    payload.update(await serialize(user, JWTUser))
+
     return create_access_token(payload, credential), create_refresh_token(payload, credential)

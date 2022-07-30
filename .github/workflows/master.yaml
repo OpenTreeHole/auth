@@ -7,7 +7,6 @@ on:
 
 env:
   APP_NAME: auth
-  TEST_TAG: app:test
 
 jobs:
   test_and_build:
@@ -35,3 +34,4 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:latest
       - name: Deploy
         run: curl -X POST ${{ secrets.DEPLOY_WEBHOOK_PRODUCTION}}
+

@@ -5,16 +5,21 @@ from aiocache import caches
 from tortoise.contrib import test
 from tortoise.contrib.test import finalizer, initializer
 
-from config import config
+from main import app
+
+client = AsyncClient(app=app, base_url='http://test')
+
+from config import config, MODELS
+
 from models import User
-from utils.auth import many_hashes, totp, set_verification_code, check_verification_code
+from utils.auth import make_identifier, totp, set_verification_code, check_verification_code
 from utils.jwt_utils import decode_payload
 from . import client
 
 
 @pytest.fixture(scope='session', autouse=True)
 def initialize_tests(request):
-    initializer(['models'], db_url=config.test_db)
+    initializer(MODELS, db_url=config.test_db)
     request.addfinalizer(finalizer)
 
 
@@ -30,7 +35,7 @@ def generate_headers(token: str) -> dict:
 
 class TestCommon(test.TestCase):
     async def test_home(self):
-        res = await client.get('/')
+        res = await client.get('/api')
         assert res.status_code == 200
         assert res.json() == {'message': 'hello world'}
 
@@ -133,7 +138,7 @@ class TestRegister(test.TestCase):
         assert res.status_code == 200
         assert res.json()['message']
         assert res.json()['scope'] == 'register'
-        code = await cache.get(f'register-{many_hashes(email)}')
+        code = await cache.get(f'register-{make_identifier(email)}')
         assert len(code) == 6
         assert isinstance(code, str)
 
@@ -142,7 +147,7 @@ class TestRegister(test.TestCase):
         assert res.status_code == 200
         assert res.json()['message']
         assert res.json()['scope'] == 'reset'
-        assert await cache.get(f'reset-{many_hashes(email)}')
+        assert await cache.get(f'reset-{make_identifier(email)}')
 
     async def test_verify_with_apikey(self):
         params = {
@@ -163,7 +168,7 @@ class TestRegister(test.TestCase):
         assert res.status_code == 200
         assert res.json()['message'] == '验证成功'
         assert res.json()['scope'] == 'register'
-        assert res.json()['code'] == await cache.get(f'register-{many_hashes(params["email"])}')
+        assert res.json()['code'] == await cache.get(f'register-{make_identifier(params["email"])}')
 
         params['check_register'] = True
         res = await client.get('/verify/apikey', params=params)
@@ -192,7 +197,7 @@ class TestRegister(test.TestCase):
         assert res.json()['message'] == 'register successful'
         assert res.json()['access']
         assert res.json()['refresh']
-        assert User.filter(identifier=many_hashes(data['email'])).exists()
+        assert User.filter(identifier=make_identifier(data['email'])).exists()
         assert await check_verification_code(data['email'], code, 'register') is False
 
         code = await set_verification_code(email=data['email'], scope='register')

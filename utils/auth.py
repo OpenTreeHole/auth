@@ -12,10 +12,15 @@ from config import config
 cache = caches.get('default')
 
 
-def many_hashes(string: str) -> str:
+def sha3(string: str) -> str:
+    return hashlib.sha3_512(string.encode()).hexdigest()
+
+
+def make_identifier(raw_email: str) -> str:
     iterations = 1
-    byte_string = bytes(string.encode('utf-8'))
-    return hashlib.pbkdf2_hmac('sha3_512', byte_string, b'', iterations).hex()
+    byte_email = bytes(raw_email.encode('utf-8'))
+    salt = base64.b64decode(config.identifier_salt)
+    return hashlib.pbkdf2_hmac('sha3_512', byte_email, salt, iterations).hex()
 
 
 def password_hash(algorithm: str, raw_password: str, salt: str, iterations: int) -> str:
@@ -86,7 +91,7 @@ async def set_verification_code(email: str, scope='register') -> str:
     """
     code = str(secrets.randbelow(1000000)).zfill(6)
     await cache.set(
-        key=f'{scope}-{many_hashes(email)}',
+        key=f'{scope}-{make_identifier(email)}',
         value=code,
         ttl=config.verification_code_expires * 60
     )
@@ -97,7 +102,7 @@ async def check_verification_code(email: str, code: str, scope='register') -> bo
     """
     检查验证码
     """
-    stored_code = await cache.get(f'{scope}-{many_hashes(email)}')
+    stored_code = await cache.get(f'{scope}-{make_identifier(email)}')
     return code == stored_code
 
 
@@ -105,4 +110,4 @@ async def delete_verification_code(email: str, scope='register') -> int:
     """
     删除验证码
     """
-    return await cache.delete(f'{scope}-{many_hashes(email)}')
+    return await cache.delete(f'{scope}-{make_identifier(email)}')
