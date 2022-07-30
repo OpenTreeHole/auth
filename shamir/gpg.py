@@ -13,7 +13,7 @@ async def encrypt_email(email: str, user_id: int):
     objs = []
     for i in range(length):
         objs.append(ShamirEmail(
-            key=str(gpg.encrypt(str(shares[i]), recipients=keys[i]['fingerprint'])),
+            key=str(gpg.encrypt(str(shares[i]), recipients=keys[i]['fingerprint'], always_trust=True)),
             encrypted_by=keys[i]['uids'][0],
             user_id=user_id
         ))
