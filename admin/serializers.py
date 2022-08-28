@@ -24,5 +24,9 @@ class PageModel(BaseModel):
     offset: Optional[int] = 0
 
 
+class UserGet(PageModel):
+    role: Optional[str]
+
+
 class UserModify(BaseModel):
     nickname: Optional[str]

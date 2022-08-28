@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter
 from fastapi.params import Depends
 
-from admin.serializers import UserModel, PageModel, UserList, UserModify
+from admin.serializers import UserModel, UserModify, UserGet
 from models import User
 from utils.common import get_user
 from utils.exceptions import Forbidden
@@ -28,9 +28,17 @@ async def get_user_by_id(user_id: int, user: User = Depends(get_user)):
 
 # admin only
 @router.get('/users', response_model=List[UserModel])
-async def list_users(query: PageModel = Depends()):
-    users = User.all().offset(query.offset).limit(query.size)
-    return await serialize(users, UserList)
+async def list_users(query: UserGet = Depends()):
+    if query.role:
+        queryset = User.filter(roles__contains=[query.role])
+    else:
+        queryset = User.all()
+    if query.size != 0:
+        queryset = queryset.limit(query.size)
+    queryset = queryset.offset(query.offset)
+
+    users = await queryset
+    return users
 
 
 # admin only
