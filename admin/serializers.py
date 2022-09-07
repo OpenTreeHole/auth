@@ -7,7 +7,13 @@ from models import Permission, User
 from utils.orm import models_creator
 
 PermissionModel, PermissionList = models_creator(Permission)
-UserModel, UserList = models_creator(User)
+_UserModel, UserList = models_creator(User)
+
+
+class UserModel(_UserModel):
+    permission: dict
+    user_id: int
+    favorites: list[int]
 
 
 class PermissionDelete(BaseModel):

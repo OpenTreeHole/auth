@@ -27,6 +27,10 @@ class User(Model):
     nickname = fields.CharField(max_length=32, default='user')
     offense_count = fields.IntField(default=0)
     roles = fields.JSONField(default=list)
+    config = fields.JSONField(default=dict)
+    permission: dict  # old api
+    user_id: int  # old api
+    favorites: list[int]  # old api
     permissions: fields.ReverseRelation['Permission']
     permissions_made: fields.ReverseRelation['Permission']
     all_objects = Manager()
@@ -38,7 +42,10 @@ class User(Model):
         manager = IsActiveManager()
 
     class PydanticMeta:
-        include = ('id', 'nickname', 'joined_time', 'last_login', 'roles', 'offense_count', 'is_admin')
+        include = (
+            'id', 'nickname', 'joined_time', 'last_login', 'roles', 'offense_count', 'is_admin', 'permission',
+            'user_id',
+            'config')
         allow_cycles = False
         max_recursion = 1
 

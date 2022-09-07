@@ -1,13 +1,9 @@
 from typing import Optional
 
 from pydantic import BaseModel, validator, EmailStr, Field
-from tortoise.contrib.pydantic import pydantic_model_creator
 
 from config import config
-from models import User
 from utils.exceptions import ValidationError
-
-UserSerializer = pydantic_model_creator(User)
 
 
 class EmailModel(BaseModel):
