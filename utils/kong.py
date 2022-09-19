@@ -32,6 +32,9 @@ async def create_user(id: int) -> dict:
 async def create_jwt_credential(id: int) -> JwtCredential:
     async with kong.post(f'/consumers/{id}/jwt', json={}) as r:
         json = await r.json(content_type=None)
+        if r.status == 404:  # sometimes the user is not created
+            await create_user(id)
+            return await create_jwt_credential(id)
         if not r.status == 201:
             raise ServerError(json.get('message'))
         return JwtCredential(**json)
