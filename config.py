@@ -9,6 +9,7 @@ from aiocache import caches
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseSettings, Field
 from pytz import UnknownTimeZoneError
+from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 
 
@@ -126,8 +127,7 @@ if config.mode != 'test':
         add_exception_handlers=True,
     )
 
-
-# Tortoise.init_models([models], 'models')
+Tortoise.init_models(MODELS, 'models')
 
 
 def custom_openapi():

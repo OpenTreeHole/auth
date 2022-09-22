@@ -76,9 +76,9 @@ async def get_permission_by_id(id: int):
 
 
 # admin only
-@router.get('/permissions', response_model=PermissionModel)
+@router.get('/permissions', response_model=List[PermissionModel])
 async def list_permissions(query: PageModel = Depends()):
-    permissions = Permission.all().offset(query.offset).limit(query.size)
+    permissions = await Permission.all().offset(query.offset).limit(query.size)
     return permissions
 
 

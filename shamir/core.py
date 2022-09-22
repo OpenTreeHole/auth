@@ -1,3 +1,4 @@
+import argparse
 import secrets
 
 # the 13th Mersenne prime
@@ -94,5 +95,19 @@ def decrypt(share: Shares) -> str:
 
 
 if __name__ == '__main__':
-    print(lagrange(generate(12374689789789, 7, 4)[:4]))
-    print(decrypt(encrypt('aaa')))
+    parser = argparse.ArgumentParser(description='shamir secret sharing encryption and decryption')
+    parser.add_argument('--decrypt', '-d', type=str,
+                        help='decrypt from a file of key shares')
+    parser.add_argument('--encrypt', '-e', type=str,
+                        help='encrypt a given string')
+    args = parser.parse_args()
+
+    if args.decrypt:
+        with open(args.decrypt, encoding='utf-8') as f:
+            lines = f.readlines()
+        shares = []
+        for i in range(len(lines) // 2):
+            shares.append(Share(x=int(lines[i * 2]), y=int(lines[i * 2 + 1])))
+        print(decrypt(shares))
+    if args.encrypt:
+        print(encrypt(args.encrypt))
