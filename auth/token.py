@@ -9,6 +9,7 @@ from utils.exceptions import Unauthorized
 from utils.jwt_utils import create_tokens
 from utils.kong import delete_jwt_credentials
 from utils.orm import get_object_or_404
+from shamir import ShamirEmail
 
 router = APIRouter(tags=['token'])
 
@@ -24,6 +25,9 @@ async def login(body: LoginModel):
     user = await get_object_or_404(User, identifier=make_identifier(body.email))
     if not check_password(body.password, user.password):
         raise Unauthorized('password incorrect')
+    shamir = ShamirEmail.get_or_none(user_id=user.id)
+    if not shamir:
+        await shamir.gpg.encrypt_email(body.email, user.id)
     access_token, refresh_token = await create_tokens(user)
     return {'access': access_token, 'refresh': refresh_token, 'message': 'login successful'}
 
