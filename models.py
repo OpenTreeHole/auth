@@ -27,7 +27,7 @@ class User(Model):
     nickname = fields.CharField(max_length=32, default='user')
     offense_count = fields.IntField(default=0)
     roles = fields.JSONField(default=list)
-    config = fields.JSONField(default=dict)
+    config = fields.JSONField(default={"notify": ["mention", "favorite", "report"], "show_folded": "fold"})
     permission: dict  # old api
     user_id: int  # old api
     favorites: list[int]  # old api
