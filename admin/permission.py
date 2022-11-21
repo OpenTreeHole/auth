@@ -23,6 +23,7 @@ def log(name: str, action: str, to: User, by: User, reason: str):
 async def add_permission(user_id: int, body: PermissionAdd, from_user: User = Depends(get_user)):
     to_user = await get_object_or_404(User, id=user_id)
     await kong.add_acl(user_id, body.name)
+    to_user.roles.append(body.name)
     log(body.name, 'ADD', to_user, from_user, body.reason)
 
     # permissions with time limit
@@ -46,7 +47,8 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
     # permissions that should add offense count
     if body.name.startswith('ban_'):
         to_user.offense_count += 1
-        await to_user.save()
+
+    await to_user.save()
 
     return {'message': 'success'}
 
