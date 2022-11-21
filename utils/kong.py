@@ -101,7 +101,7 @@ async def add_acl(id: int, group: str) -> bool:
 
 
 async def delete_acl(id: int, group: str) -> bool:
-    async with kong.post(f'/consumers/{id}/acls/{group}', json={}) as r:
+    async with kong.delete(f'/consumers/{id}/acls/{group}', json={}) as r:
         if not (r.status == 204 or r.status == 404):
             json = await r.json(content_type=None)
             raise ServerError(json.get('message'))
