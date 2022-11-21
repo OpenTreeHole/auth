@@ -23,11 +23,16 @@ def log(name: str, action: str, to: User, by: User, reason: str):
 async def add_permission(user_id: int, body: PermissionAdd, from_user: User = Depends(get_user)):
     to_user = await get_object_or_404(User, id=user_id)
     await kong.add_acl(user_id, body.name)
+    if body.name not in to_user.roles:
+        to_user.roles.append(body.name)
+    await to_user.save()
     log(body.name, 'ADD', to_user, from_user, body.reason)
 
     # permissions with time limit
     if body.name.startswith('ban_'):
         permission = await Permission.get_or_none(user_id=user_id, name=body.name)
+        # permissions that should add offense count
+        to_user.offense_count += 1
 
         if permission:
             permission.end_time += timedelta(days=body.days)
@@ -42,12 +47,6 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
                 end_time=now() + timedelta(days=body.days),
                 reason=body.reason
             )
-
-    # permissions that should add offense count
-    if body.name.startswith('ban_'):
-        to_user.offense_count += 1
-        await to_user.save()
-
     return {'message': 'success'}
 
 
@@ -55,7 +54,17 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
 @router.delete('/users/{user_id}/permissions/{name}')
 async def delete_permission(user_id: int, name: str, body: PermissionDelete, from_user: User = Depends(get_user)):
     to_user = await get_object_or_404(User, id=user_id)
+    permission = await Permission.get_or_none(user_id=user_id, name=name)
+    if permission:
+        permission.synced = True
+        await permission.save()
+
     await kong.delete_acl(user_id, name)
+    try:
+        to_user.roles.remove(name)
+        await to_user.save()
+    except ValueError:
+        pass
     log(name, 'DELETE', to_user, from_user, body.reason)
     return {'message': 'success'}
 
@@ -89,3 +98,12 @@ async def sync_permissions():
         await kong.delete_acl(permission.user_id, permission.name)
         permission.synced = True
         await permission.save()
+
+        # save user status
+        user = await User.get_or_none(id=permission.user_id)
+        if user is not None:
+            try:
+                user.roles.remove(permission.name)
+                await user.save()
+            except ValueError:
+                pass
