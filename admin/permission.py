@@ -32,6 +32,7 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
         if permission:
             permission.end_time += timedelta(days=body.days)
             permission.reason += f'\n{body.reason}'
+            permission.synced = False
             await permission.save()
         else:
             await Permission.create(
