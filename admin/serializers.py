@@ -36,3 +36,5 @@ class UserGet(PageModel):
 
 class UserModify(BaseModel):
     nickname: Optional[str]
+    permission: dict
+    config: dict
