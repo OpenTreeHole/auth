@@ -25,8 +25,6 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
     await kong.add_acl(user_id, body.name)
     if body.name not in to_user.roles:
         to_user.roles.append(body.name)
-    await to_user.save()
-    log(body.name, 'ADD', to_user, from_user, body.reason)
 
     # permissions with time limit
     if body.name.startswith('ban_'):
@@ -35,9 +33,11 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
         to_user.offense_count += 1
 
         if permission:
-            permission.end_time += timedelta(days=body.days)
+            permission.start_time = now()
+            permission.end_time = now() + timedelta(days=body.days)
             permission.reason += f'\n{body.reason}'
             permission.synced = False
+            permission.made_by = from_user
             await permission.save()
         else:
             await Permission.create(
@@ -47,6 +47,8 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
                 end_time=now() + timedelta(days=body.days),
                 reason=body.reason
             )
+    await to_user.save()
+    log(body.name, 'ADD', to_user, from_user, body.reason)
     return {'message': 'success'}
 
 
