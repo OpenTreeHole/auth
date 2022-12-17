@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import List
 
+import tortoise.exceptions
 from fastapi import APIRouter, Depends
 
 from admin.serializers import PermissionAdd, PermissionModel, PageModel, PermissionDelete
@@ -45,7 +46,13 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
             # accumulate reasons
             permission.reason += f'\n{body.reason}'
             permission.made_by = from_user
-            await permission.save()
+            try:
+                await permission.save()
+            # reason maybe longer than 100
+            except tortoise.exceptions.ValidationError:
+                permission.reason = f'{body.reason}'
+                await permission.save()
+
         else:
             await Permission.create(
                 user=to_user,
