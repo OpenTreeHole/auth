@@ -33,10 +33,17 @@ async def add_permission(user_id: int, body: PermissionAdd, from_user: User = De
         to_user.offense_count += 1
 
         if permission:
-            permission.start_time = now()
-            permission.end_time = now() + timedelta(days=body.days)
+            if permission.synced:
+                # if not banned, start from now
+                permission.start_time = now()
+                permission.end_time = now() + timedelta(days=body.days)
+                permission.synced = False
+            else:
+                # if is banned, accumulate
+                permission.end_time += timedelta(days=body.days)
+
+            # accumulate reasons
             permission.reason += f'\n{body.reason}'
-            permission.synced = False
             permission.made_by = from_user
             await permission.save()
         else:
