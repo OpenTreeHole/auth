@@ -39,6 +39,11 @@ async def logout(user: User = Depends(get_user)):
     return {'message': 'logout successful'}
 
 
+@router.post('/logout', response_model=MessageResponse)
+async def logout_with_token(user: User = Depends(get_user)):
+    return logout(user)
+
+
 @router.post('/refresh', response_model=TokensResponse)
 async def refresh(user: User = Depends(get_user_by_refresh_token)):
     access_token, refresh_token = await create_tokens(user)
